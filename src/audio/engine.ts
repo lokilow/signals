@@ -1,12 +1,5 @@
 export type WaveformType = 'sine' | 'square' | 'sawtooth' | 'triangle'
 
-export type ProcessingNode = {
-  id: string
-  createNode: (ctx: AudioContext) => AudioNode
-  node: AudioNode | null
-  bypassed: boolean
-}
-
 export class AudioEngine {
   private ctx: AudioContext | null = null
   private oscillator: OscillatorNode | null = null
