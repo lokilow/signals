@@ -15,6 +15,12 @@ export function OscillatorControls(props: Props) {
   )
   const [gainActive, setGainActive] = createSignal(false)
   const [gainValue, setGainValue] = createSignal(1)
+  const [panActive, setPanActive] = createSignal(false)
+  const [panValue, setPanValue] = createSignal(0)
+  const [delayActive, setDelayActive] = createSignal(false)
+  const [delayTimeValue, setDelayTimeValue] = createSignal(0.2)
+  const [delayWetValue, setDelayWetValue] = createSignal(0.5)
+  const [delayFeedbackValue, setDelayFeedbackValue] = createSignal(0.3)
 
   const toggle = () => {
     if (playing()) {
@@ -74,6 +80,50 @@ export function OscillatorControls(props: Props) {
     const val = parseFloat((e.target as HTMLInputElement).value)
     setGainValue(val)
     props.engine.setGainStageLevel(val)
+  }
+
+  const togglePanStage = () => {
+    if (panActive()) {
+      props.engine.disablePanStage()
+      setPanActive(false)
+    } else {
+      props.engine.enablePanStage()
+      setPanActive(true)
+    }
+  }
+
+  const handlePanChange = (e: Event) => {
+    const val = parseFloat((e.target as HTMLInputElement).value)
+    setPanValue(val)
+    props.engine.setPanValue(val)
+  }
+
+  const toggleDelayStage = () => {
+    if (delayActive()) {
+      props.engine.disableDelayStage()
+      setDelayActive(false)
+    } else {
+      props.engine.enableDelayStage()
+      setDelayActive(true)
+    }
+  }
+
+  const handleDelayChange = (e: Event) => {
+    const val = parseFloat((e.target as HTMLInputElement).value)
+    setDelayTimeValue(val)
+    props.engine.setDelayTime(val)
+  }
+
+  const handleDelayWetChange = (e: Event) => {
+    const val = parseFloat((e.target as HTMLInputElement).value)
+    setDelayWetValue(val)
+    props.engine.setDelayWet(val)
+  }
+
+  const handleDelayFeedbackChange = (e: Event) => {
+    const val = parseFloat((e.target as HTMLInputElement).value)
+    setDelayFeedbackValue(val)
+    props.engine.setDelayFeedback(val)
   }
 
   return (
@@ -159,6 +209,82 @@ export function OscillatorControls(props: Props) {
           value={gainValue()}
           onInput={handleGainChange}
           disabled={!gainActive()}
+        />
+      </div>
+
+      <div class="flex flex-col gap-2 p-3 bg-gray-800 rounded">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold">Stereo Pan</span>
+          <button
+            class={`px-2 py-1 text-sm rounded ${
+              panActive() ? 'bg-red-600' : 'bg-green-600'
+            }`}
+            onClick={togglePanStage}
+          >
+            {panActive() ? 'Bypass' : 'Enable'}
+          </button>
+        </div>
+        <label class="text-xs text-gray-300">
+          Position: {panValue().toFixed(2)}
+        </label>
+        <input
+          type="range"
+          min="-1"
+          max="1"
+          step="0.01"
+          value={panValue()}
+          onInput={handlePanChange}
+          disabled={!panActive()}
+        />
+      </div>
+
+      <div class="flex flex-col gap-2 p-3 bg-gray-800 rounded">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold">Delay</span>
+          <button
+            class={`px-2 py-1 text-sm rounded ${
+              delayActive() ? 'bg-red-600' : 'bg-green-600'
+            }`}
+            onClick={toggleDelayStage}
+          >
+            {delayActive() ? 'Bypass' : 'Enable'}
+          </button>
+        </div>
+        <label class="text-xs text-gray-300">
+          Time: {delayTimeValue().toFixed(2)}s
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={delayTimeValue()}
+          onInput={handleDelayChange}
+          disabled={!delayActive()}
+        />
+        <label class="text-xs text-gray-300">
+          Wet mix: {(delayWetValue() * 100).toFixed(0)}%
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={delayWetValue()}
+          onInput={handleDelayWetChange}
+          disabled={!delayActive()}
+        />
+        <label class="text-xs text-gray-300">
+          Feedback: {(delayFeedbackValue() * 100).toFixed(0)}%
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="0.95"
+          step="0.01"
+          value={delayFeedbackValue()}
+          onInput={handleDelayFeedbackChange}
+          disabled={!delayActive()}
         />
       </div>
 
