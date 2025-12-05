@@ -12,6 +12,9 @@ export class AudioEngine {
   private oscillator: OscillatorNode | null = null
   private analyser: AnalyserNode | null = null
   private gain: GainNode | null = null
+  private micStream: MediaStream | null = null
+  private micSource: MediaStreamAudioSourceNode | null = null
+  private sourceType: 'oscillator' | 'microphone' = 'oscillator'
   private processingNodes: ProcessingNode[] = []
 
   // Buffers for visualization
@@ -46,6 +49,8 @@ export class AudioEngine {
     this.oscillator = this.ctx.createOscillator()
     this.oscillator.type = type
     this.oscillator.frequency.value = frequency
+    // ensure oscillator is the active source when starting it
+    this.sourceType = 'oscillator'
     this.rebuildSignalChain()
     this.oscillator.start()
   }
@@ -53,10 +58,8 @@ export class AudioEngine {
   stop() {
     this.oscillator?.stop()
     this.oscillator?.disconnect()
-    for (const node of this.processingNodes) {
-      node.node?.disconnect()
-    }
     this.oscillator = null
+    this.rebuildSignalChain()
   }
 
   setFrequency(freq: number) {
@@ -85,6 +88,39 @@ export class AudioEngine {
 
   get sampleRate(): number {
     return this.ctx?.sampleRate ?? 44100
+  }
+
+  async enableMicrophone() {
+    if (!this.ctx) return
+    if (this.micSource) return
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    this.micStream = stream
+    this.micSource = this.ctx.createMediaStreamSource(stream)
+    this.sourceType = 'microphone'
+    this.rebuildSignalChain()
+  }
+
+  disableMicrophone() {
+    if (this.micStream) {
+      for (const track of this.micStream.getTracks()) {
+        track.stop()
+      }
+    }
+    this.micSource?.disconnect()
+    this.micStream = null
+    this.micSource = null
+    if (this.sourceType === 'microphone') {
+      this.sourceType = 'oscillator'
+    }
+    this.rebuildSignalChain()
+  }
+
+  setSource(type: 'oscillator' | 'microphone') {
+    if (type === 'microphone' && !this.micSource) return
+    if (type === 'oscillator' && !this.oscillator) return
+    this.sourceType = type
+    this.rebuildSignalChain()
   }
 
   addProcessingNode(config: {
@@ -126,14 +162,18 @@ export class AudioEngine {
 
   private rebuildSignalChain() {
     if (!this.ctx || !this.analyser || !this.gain) return
-    if (!this.oscillator) return
 
-    this.oscillator.disconnect()
+    const source =
+      this.sourceType === 'microphone' ? this.micSource : this.oscillator
+    if (!source) return
+
+    this.oscillator?.disconnect()
+    this.micSource?.disconnect()
     for (const node of this.processingNodes) {
       node.node?.disconnect()
     }
 
-    let current: AudioNode = this.oscillator
+    let current: AudioNode = source
     for (const node of this.processingNodes) {
       if (node.bypassed) continue
       if (!node.node) {
