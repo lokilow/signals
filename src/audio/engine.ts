@@ -52,16 +52,24 @@ export type AudioGraphDebugInfo = {
   masterGainValue: number
 }
 
-export type SignalLevels = {
+export type ChannelLevels = {
   peak: number
   rms: number
   peakDb: number
   rmsDb: number
 }
 
+export type StereoLevels = {
+  left: ChannelLevels
+  right: ChannelLevels
+}
+
 export class AudioEngine {
   private ctx: AudioContext | null = null
   private analyser: AnalyserNode | null = null
+  private analyserL: AnalyserNode | null = null
+  private analyserR: AnalyserNode | null = null
+  private splitter: ChannelSplitterNode | null = null
   private masterGain: GainNode | null = null
   private oscillator: OscillatorNode | null = null
   private micStream: MediaStream | null = null
@@ -98,11 +106,26 @@ export class AudioEngine {
 
   async init() {
     this.ctx = new AudioContext()
+
+    // Main analyser for waveform/spectrum (stereo)
     this.analyser = this.ctx.createAnalyser()
     this.analyser.fftSize = 2048
     this.analyser.smoothingTimeConstant = 0
     this.analyser.channelCount = 2
     this.analyser.channelCountMode = 'explicit'
+
+    // Stereo metering: split into L/R channels
+    this.splitter = this.ctx.createChannelSplitter(2)
+    this.analyserL = this.ctx.createAnalyser()
+    this.analyserR = this.ctx.createAnalyser()
+    this.analyserL.fftSize = 2048
+    this.analyserR.fftSize = 2048
+    this.analyserL.smoothingTimeConstant = 0
+    this.analyserR.smoothingTimeConstant = 0
+
+    // Connect splitter to L/R analysers
+    this.splitter.connect(this.analyserL, 0)
+    this.splitter.connect(this.analyserR, 1)
 
     this.masterGain = this.ctx.createGain()
     this.masterGain.gain.value = 0.3
@@ -333,18 +356,31 @@ export class AudioEngine {
   }
 
   /**
-   * Get signal levels at various points in the chain for debugging
+   * Get stereo signal levels for metering
    */
-  getSignalLevels(): SignalLevels {
-    const timeDomain = this.getTimeDomainData()
+  getStereoLevels(): StereoLevels {
+    return {
+      left: this.getChannelLevels(this.analyserL),
+      right: this.getChannelLevels(this.analyserR),
+    }
+  }
+
+  private getChannelLevels(analyser: AnalyserNode | null): ChannelLevels {
+    if (!analyser) {
+      return { peak: 0, rms: 0, peakDb: -Infinity, rmsDb: -Infinity }
+    }
+
+    const buffer = new Float32Array(analyser.fftSize)
+    analyser.getFloatTimeDomainData(buffer)
+
     let peak = 0
     let rms = 0
-    for (let i = 0; i < timeDomain.length; i++) {
-      const sample = Math.abs(timeDomain[i]!)
+    for (let i = 0; i < buffer.length; i++) {
+      const sample = Math.abs(buffer[i]!)
       if (sample > peak) peak = sample
       rms += sample * sample
     }
-    rms = Math.sqrt(rms / timeDomain.length)
+    rms = Math.sqrt(rms / buffer.length)
 
     return {
       peak,
@@ -451,9 +487,12 @@ export class AudioEngine {
       }
     }
 
-    // Connect to output
+    // Connect to output and metering
     current.connect(this.masterGain)
     current.connect(this.analyser)
+    if (this.splitter) {
+      current.connect(this.splitter)
+    }
   }
 
   private syncOscillatorNode() {
