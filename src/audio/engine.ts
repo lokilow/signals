@@ -61,12 +61,14 @@ export class AudioEngine {
   }
 
   getTimeDomainData(): Float32Array {
-    this.analyser?.getFloatTimeDomainData(this.timeDomainData)
+    const tdBuffer = this.timeDomainData as Float32Array<ArrayBuffer>
+    this.analyser?.getFloatTimeDomainData(tdBuffer)
     return this.timeDomainData
   }
 
   getFrequencyData(): Float32Array {
-    this.analyser?.getFloatFrequencyData(this.frequencyData)
+    const freqBuffer = this.frequencyData as Float32Array<ArrayBuffer>
+    this.analyser?.getFloatFrequencyData(freqBuffer)
     return this.frequencyData
   }
 
