@@ -27,6 +27,38 @@ export type EngineState = {
   stages: StageState[]
 }
 
+// Debug types
+export type StageInstanceDebugInfo = {
+  id: string
+  kind: string
+  bypassed: boolean
+  hasInstance: boolean
+}
+
+export type AudioGraphDebugInfo = {
+  contextState: AudioContextState
+  sampleRate: number
+  currentTime: number
+  source: {
+    type: SourceType
+    oscillatorActive: boolean
+    micActive: boolean
+  }
+  stageInstances: StageInstanceDebugInfo[]
+  analyser: {
+    fftSize: number
+    frequencyBinCount: number
+  }
+  masterGainValue: number
+}
+
+export type SignalLevels = {
+  peak: number
+  rms: number
+  peakDb: number
+  rmsDb: number
+}
+
 export class AudioEngine {
   private ctx: AudioContext | null = null
   private analyser: AnalyserNode | null = null
@@ -253,6 +285,73 @@ export class AudioEngine {
 
   get sampleRate(): number {
     return this.ctx?.sampleRate ?? 44100
+  }
+
+  /**
+   * Debug information about the current audio graph
+   */
+  getDebugInfo(): AudioGraphDebugInfo {
+    const stageInstances: StageInstanceDebugInfo[] = []
+    for (const [id, instance] of this.stageInstances) {
+      const stageState = this.state.stages.find((s) => s.id === id)
+      stageInstances.push({
+        id,
+        kind: stageState?.kind ?? 'unknown',
+        bypassed: stageState?.bypassed ?? false,
+        hasInstance: true,
+      })
+    }
+
+    // Also include stages that don't have instances yet
+    for (const stage of this.state.stages) {
+      if (!this.stageInstances.has(stage.id)) {
+        stageInstances.push({
+          id: stage.id,
+          kind: stage.kind,
+          bypassed: stage.bypassed,
+          hasInstance: false,
+        })
+      }
+    }
+
+    return {
+      contextState: this.ctx?.state ?? 'closed',
+      sampleRate: this.ctx?.sampleRate ?? 0,
+      currentTime: this.ctx?.currentTime ?? 0,
+      source: {
+        type: this.state.source,
+        oscillatorActive: this.oscillator !== null,
+        micActive: this.micSource !== null,
+      },
+      stageInstances,
+      analyser: {
+        fftSize: this.analyser?.fftSize ?? 0,
+        frequencyBinCount: this.analyser?.frequencyBinCount ?? 0,
+      },
+      masterGainValue: this.masterGain?.gain.value ?? 0,
+    }
+  }
+
+  /**
+   * Get signal levels at various points in the chain for debugging
+   */
+  getSignalLevels(): SignalLevels {
+    const timeDomain = this.getTimeDomainData()
+    let peak = 0
+    let rms = 0
+    for (let i = 0; i < timeDomain.length; i++) {
+      const sample = Math.abs(timeDomain[i]!)
+      if (sample > peak) peak = sample
+      rms += sample * sample
+    }
+    rms = Math.sqrt(rms / timeDomain.length)
+
+    return {
+      peak,
+      rms,
+      peakDb: peak > 0 ? 20 * Math.log10(peak) : -Infinity,
+      rmsDb: rms > 0 ? 20 * Math.log10(rms) : -Infinity,
+    }
   }
 
   private updateState(mutator: (state: EngineState) => void) {

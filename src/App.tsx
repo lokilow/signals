@@ -1,8 +1,9 @@
-import { onMount, createSignal } from 'solid-js'
+import { createSignal } from 'solid-js'
 import { AudioEngine } from './audio/engine.ts'
 import { Waveform } from './components/Waveform.tsx'
 import { Spectrum } from './components/Spectrum.tsx'
 import { OscillatorControls } from './components/OscillatorControls.tsx'
+import { AudioDebug } from './components/AudioDebug.tsx'
 
 export function App() {
   const [engine, setEngine] = createSignal<AudioEngine | null>(null)
@@ -25,17 +26,20 @@ export function App() {
           Initialize Audio
         </button>
       ) : (
-        <div class="flex flex-col gap-8">
-          <OscillatorControls engine={engine()!} />
+        <>
+          <div class="flex flex-col gap-8">
+            <OscillatorControls engine={engine()!} />
 
-          <div class="flex gap-8">
-            <Waveform getData={() => engine()!.getTimeDomainData()} />
-            <Spectrum
-              getData={() => engine()!.getFrequencyData()}
-              sampleRate={engine()!.sampleRate}
-            />
+            <div class="flex gap-8">
+              <Waveform getData={() => engine()!.getTimeDomainData()} />
+              <Spectrum
+                getData={() => engine()!.getFrequencyData()}
+                sampleRate={engine()!.sampleRate}
+              />
+            </div>
           </div>
-        </div>
+          <AudioDebug engine={engine()!} />
+        </>
       )}
     </div>
   )
