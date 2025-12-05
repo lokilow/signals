@@ -16,6 +16,8 @@ export class AudioEngine {
   private micSource: MediaStreamAudioSourceNode | null = null
   private sourceType: 'oscillator' | 'microphone' = 'oscillator'
   private processingNodes: ProcessingNode[] = []
+  private readonly gainStageId = 'gain-stage'
+  private gainLevel = 1
 
   // Buffers for visualization
   readonly fftSize = 2048
@@ -25,6 +27,32 @@ export class AudioEngine {
   constructor() {
     this.timeDomainData = new Float32Array(this.fftSize)
     this.frequencyData = new Float32Array(this.fftSize / 2)
+  }
+
+  enableGainStage() {
+    const node = this.ensureGainStage()
+    if (!node) return
+    if (node.bypassed) {
+      node.bypassed = false
+      this.rebuildSignalChain()
+    }
+  }
+
+  disableGainStage() {
+    const node = this.findProcessingNode(this.gainStageId)
+    if (!node) return
+    if (!node.bypassed) {
+      node.bypassed = true
+      this.rebuildSignalChain()
+    }
+  }
+
+  setGainStageLevel(level: number) {
+    this.gainLevel = level
+    const node = this.ensureGainStage()
+    if (node?.node && node.node instanceof GainNode) {
+      node.node.gain.value = level
+    }
   }
 
   async init() {
@@ -185,5 +213,28 @@ export class AudioEngine {
 
     current.connect(this.analyser)
     // analyser is already connected to gain/destination during init
+  }
+
+  private ensureGainStage() {
+    if (!this.ctx) return
+    let existing = this.findProcessingNode(this.gainStageId)
+    if (existing) return existing
+
+    this.addProcessingNode({
+      id: this.gainStageId,
+      bypassed: true,
+      createNode: (ctx) => {
+        const gain = ctx.createGain()
+        gain.gain.value = this.gainLevel
+        return gain
+      },
+    })
+
+    existing = this.findProcessingNode(this.gainStageId)
+    return existing
+  }
+
+  private findProcessingNode(id: string) {
+    return this.processingNodes.find((node) => node.id === id)
   }
 }

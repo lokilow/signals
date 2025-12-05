@@ -13,6 +13,8 @@ export function OscillatorControls(props: Props) {
   const [source, setSource] = createSignal<'oscillator' | 'microphone'>(
     'oscillator'
   )
+  const [gainActive, setGainActive] = createSignal(false)
+  const [gainValue, setGainValue] = createSignal(1)
 
   const toggle = () => {
     if (playing()) {
@@ -56,6 +58,22 @@ export function OscillatorControls(props: Props) {
   const handleSelectSource = (next: 'oscillator' | 'microphone') => {
     props.engine.setSource(next)
     setSource(next)
+  }
+
+  const toggleGainStage = () => {
+    if (gainActive()) {
+      props.engine.disableGainStage()
+      setGainActive(false)
+    } else {
+      props.engine.enableGainStage()
+      setGainActive(true)
+    }
+  }
+
+  const handleGainChange = (e: Event) => {
+    const val = parseFloat((e.target as HTMLInputElement).value)
+    setGainValue(val)
+    props.engine.setGainStageLevel(val)
   }
 
   return (
@@ -115,6 +133,32 @@ export function OscillatorControls(props: Props) {
           value={frequency()}
           onInput={handleFrequency}
           class="flex-1"
+        />
+      </div>
+
+      <div class="flex flex-col gap-2 p-3 bg-gray-800 rounded">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold">Gain Stage</span>
+          <button
+            class={`px-2 py-1 text-sm rounded ${
+              gainActive() ? 'bg-red-600' : 'bg-green-600'
+            }`}
+            onClick={toggleGainStage}
+          >
+            {gainActive() ? 'Bypass' : 'Enable'}
+          </button>
+        </div>
+        <label class="text-xs text-gray-300">
+          Level: {gainValue().toFixed(2)}x
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="2"
+          step="0.01"
+          value={gainValue()}
+          onInput={handleGainChange}
+          disabled={!gainActive()}
         />
       </div>
 
