@@ -12,6 +12,7 @@ export function App() {
     const e = new AudioEngine()
     await e.init()
     setEngine(e)
+    ;(window as any).engine = e
     setReady(true)
   }
 

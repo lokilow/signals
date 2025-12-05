@@ -1,153 +1,73 @@
-export type WaveformType = 'sine' | 'square' | 'sawtooth' | 'triangle'
+import {
+  STAGE_REGISTRY,
+  getDefaultParams,
+  type StageKind,
+  type StageParamsMap,
+  type StageInstance,
+} from './stages.ts'
 
-type ProcessingNodeInstance = {
-  input: AudioNode
-  output: AudioNode
+export type WaveformType = 'sine' | 'square' | 'sawtooth' | 'triangle'
+export type SourceType = 'oscillator' | 'microphone'
+
+// Re-export for consumers
+export type { StageKind, StageParamsMap }
+
+// Stage state uses discriminated union for type safety
+export type StageState<K extends StageKind = StageKind> = {
+  id: string
+  kind: K
+  bypassed: boolean
+  params: StageParamsMap[K]
 }
 
-export type ProcessingNode = {
-  id: string
-  createNode: (ctx: AudioContext) => ProcessingNodeInstance
-  instance: ProcessingNodeInstance | null
-  bypassed: boolean
+export type EngineState = {
+  source: SourceType
+  oscillator: { running: boolean; type: WaveformType; frequency: number }
+  mic: { enabled: boolean }
+  stages: StageState[]
 }
 
 export class AudioEngine {
   private ctx: AudioContext | null = null
-  private oscillator: OscillatorNode | null = null
   private analyser: AnalyserNode | null = null
   private masterGain: GainNode | null = null
+  private oscillator: OscillatorNode | null = null
   private micStream: MediaStream | null = null
   private micSource: MediaStreamAudioSourceNode | null = null
-  private sourceType: 'oscillator' | 'microphone' = 'oscillator'
-  private processingNodes: ProcessingNode[] = []
-  private readonly gainStageId = 'gain-stage'
-  private readonly panStageId = 'pan-stage'
-  private readonly delayStageId = 'delay-stage'
-  private gainLevel = 1
-  private panValue = 0
-  private delayTime = 0.2
-  private delayWet = 0.5
-  private delayFeedback = 0.3
-  private delayStageNodes: {
-    delay: DelayNode
-    wetGain: GainNode
-    dryGain: GainNode
-    feedbackGain: GainNode
-  } | null = null
 
-  // Buffers for visualization
-  readonly fftSize = 2048
-  private timeDomainData: Float32Array
-  private frequencyData: Float32Array
+  private stageInstances = new Map<string, StageInstance>()
+  private subscribers = new Set<(state: EngineState) => void>()
 
-  constructor() {
-    this.timeDomainData = new Float32Array(this.fftSize)
-    this.frequencyData = new Float32Array(this.fftSize / 2)
-  }
-
-  enableGainStage() {
-    const node = this.ensureGainStage()
-    if (!node) return
-    if (node.bypassed) {
-      node.bypassed = false
-      this.rebuildSignalChain()
-    }
-  }
-
-  disableGainStage() {
-    const node = this.findProcessingNode(this.gainStageId)
-    if (!node) return
-    if (!node.bypassed) {
-      node.bypassed = true
-      this.rebuildSignalChain()
-    }
-  }
-
-  setGainStageLevel(level: number) {
-    this.gainLevel = level
-    const stage = this.ensureGainStage()
-    if (!stage) return
-    const instance = this.ensureStageInstance(stage)
-    if (instance?.input instanceof GainNode) {
-      instance.input.gain.value = level
-    }
-  }
-
-  enablePanStage() {
-    const node = this.ensurePanStage()
-    if (!node) return
-    if (node.bypassed) {
-      node.bypassed = false
-      this.rebuildSignalChain()
-    }
-  }
-
-  disablePanStage() {
-    const node = this.findProcessingNode(this.panStageId)
-    if (!node) return
-    if (!node.bypassed) {
-      node.bypassed = true
-      this.rebuildSignalChain()
-    }
-  }
-
-  setPanValue(value: number) {
-    this.panValue = value
-    const stage = this.ensurePanStage()
-    if (!stage) return
-    const instance = this.ensureStageInstance(stage)
-    if (instance?.input instanceof StereoPannerNode) {
-      instance.input.pan.value = value
-    }
-  }
-
-  enableDelayStage() {
-    const node = this.ensureDelayStage()
-    if (!node) return
-    if (node.bypassed) {
-      node.bypassed = false
-      this.rebuildSignalChain()
-    }
-  }
-
-  disableDelayStage() {
-    const node = this.findProcessingNode(this.delayStageId)
-    if (!node) return
-    if (!node.bypassed) {
-      node.bypassed = true
-      this.rebuildSignalChain()
-    }
-  }
-
-  setDelayTime(value: number) {
-    this.delayTime = value
-    const nodes = this.ensureDelayStageNodes()
-    nodes?.delay && (nodes.delay.delayTime.value = value)
-  }
-
-  setDelayWet(value: number) {
-    this.delayWet = value
-    const nodes = this.ensureDelayStageNodes()
-    if (nodes) {
-      nodes.wetGain.gain.value = value
-      nodes.dryGain.gain.value = 1 - value
-    }
-  }
-
-  setDelayFeedback(value: number) {
-    this.delayFeedback = value
-    const nodes = this.ensureDelayStageNodes()
-    if (nodes) {
-      nodes.feedbackGain.gain.value = value
-    }
+  private state: EngineState = {
+    source: 'oscillator',
+    oscillator: { running: false, type: 'sine', frequency: 440 },
+    mic: { enabled: false },
+    stages: [
+      {
+        id: 'gain-stage',
+        kind: 'gain',
+        bypassed: true,
+        params: getDefaultParams('gain'),
+      },
+      {
+        id: 'pan-stage',
+        kind: 'pan',
+        bypassed: true,
+        params: getDefaultParams('pan'),
+      },
+      {
+        id: 'delay-stage',
+        kind: 'delay',
+        bypassed: true,
+        params: getDefaultParams('delay'),
+      },
+    ],
   }
 
   async init() {
     this.ctx = new AudioContext()
-
     this.analyser = this.ctx.createAnalyser()
-    this.analyser.fftSize = this.fftSize
+    this.analyser.fftSize = 2048
     this.analyser.smoothingTimeConstant = 0
     this.analyser.channelCount = 2
     this.analyser.channelCountMode = 'explicit'
@@ -156,69 +76,62 @@ export class AudioEngine {
     this.masterGain.gain.value = 0.3
     this.masterGain.connect(this.ctx.destination)
 
-    this.ensureGainStage()
-    this.ensurePanStage()
-    this.ensureDelayStage()
+    this.emitState()
+    this.rebuildSignalChain()
   }
 
-  start(type: WaveformType, frequency: number) {
-    if (!this.ctx || !this.analyser) return
-
-    this.stop()
-
-    this.oscillator = this.ctx.createOscillator()
-    this.oscillator.type = type
-    this.oscillator.frequency.value = frequency
-    // ensure oscillator is the active source when starting it
-    this.sourceType = 'oscillator'
-    this.rebuildSignalChain()
-    this.oscillator.start()
+  subscribe(handler: (state: EngineState) => void): () => void {
+    this.subscribers.add(handler)
+    handler(this.cloneState())
+    return () => this.subscribers.delete(handler)
   }
 
-  stop() {
-    this.oscillator?.stop()
-    this.oscillator?.disconnect()
-    this.oscillator = null
-    this.rebuildSignalChain()
+  getState(): EngineState {
+    return this.cloneState()
+  }
+
+  startOscillator() {
+    this.updateState((state) => {
+      state.oscillator.running = true
+      state.source = 'oscillator'
+    })
+  }
+
+  stopOscillator() {
+    this.updateState((state) => {
+      state.oscillator.running = false
+    })
   }
 
   setFrequency(freq: number) {
-    if (this.oscillator) {
-      this.oscillator.frequency.value = freq
-    }
+    this.updateState((state) => {
+      state.oscillator.frequency = freq
+    })
   }
 
   setType(type: WaveformType) {
-    if (this.oscillator) {
-      this.oscillator.type = type
-    }
-  }
-
-  getTimeDomainData(): Float32Array {
-    const tdBuffer = this.timeDomainData as Float32Array<ArrayBuffer>
-    this.analyser?.getFloatTimeDomainData(tdBuffer)
-    return this.timeDomainData
-  }
-
-  getFrequencyData(): Float32Array {
-    const freqBuffer = this.frequencyData as Float32Array<ArrayBuffer>
-    this.analyser?.getFloatFrequencyData(freqBuffer)
-    return this.frequencyData
-  }
-
-  get sampleRate(): number {
-    return this.ctx?.sampleRate ?? 44100
+    this.updateState((state) => {
+      state.oscillator.type = type
+    })
   }
 
   async enableMicrophone() {
     if (!this.ctx) return
-    if (this.micSource) return
+    if (this.micSource) {
+      this.updateState((state) => {
+        state.mic.enabled = true
+        state.source = 'microphone'
+      })
+      return
+    }
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     this.micStream = stream
     this.micSource = this.ctx.createMediaStreamSource(stream)
-    this.sourceType = 'microphone'
-    this.rebuildSignalChain()
+    this.updateState((state) => {
+      state.mic.enabled = true
+      state.source = 'microphone'
+    })
   }
 
   disableMicrophone() {
@@ -230,182 +143,204 @@ export class AudioEngine {
     this.micSource?.disconnect()
     this.micStream = null
     this.micSource = null
-    if (this.sourceType === 'microphone') {
-      this.sourceType = 'oscillator'
-    }
-    this.rebuildSignalChain()
-  }
 
-  setSource(type: 'oscillator' | 'microphone') {
-    if (type === 'microphone' && !this.micSource) return
-    if (type === 'oscillator' && !this.oscillator) return
-    this.sourceType = type
-    this.rebuildSignalChain()
-  }
-
-  addProcessingNode(config: {
-    id: string
-    createNode: (ctx: AudioContext) => ProcessingNodeInstance
-    bypassed?: boolean
-  }) {
-    const exists = this.processingNodes.find((node) => node.id === config.id)
-    if (exists) return
-
-    this.processingNodes.push({
-      id: config.id,
-      createNode: config.createNode,
-      instance: null,
-      bypassed: config.bypassed ?? false,
-    })
-
-    this.rebuildSignalChain()
-  }
-
-  removeProcessingNode(id: string) {
-    this.processingNodes = this.processingNodes.filter((node) => {
-      if (node.id === id) {
-        node.instance?.input.disconnect()
-        node.instance?.output.disconnect()
-        if (id === this.delayStageId) {
-          this.delayStageNodes = null
-        }
-        return false
+    this.updateState((state) => {
+      state.mic.enabled = false
+      if (state.source === 'microphone') {
+        state.source = 'oscillator'
       }
-      return true
     })
-    this.rebuildSignalChain()
   }
 
-  toggleProcessingNode(id: string) {
-    const target = this.processingNodes.find((node) => node.id === id)
-    if (!target) return
-
-    target.bypassed = !target.bypassed
-    this.rebuildSignalChain()
+  setSource(source: SourceType): boolean {
+    if (source === 'microphone' && !this.state.mic.enabled) return false
+    this.updateState((state) => {
+      state.source = source
+    })
+    return true
   }
 
-  private ensureStageInstance(stage: ProcessingNode) {
-    if (!this.ctx) return null
-    if (!stage.instance) {
-      stage.instance = stage.createNode(this.ctx)
+  setStageBypass(id: string, bypassed: boolean) {
+    this.updateState((state) => {
+      const stage = state.stages.find((s) => s.id === id)
+      if (stage) stage.bypassed = bypassed
+    })
+  }
+
+  setStageParams(id: string, params: Record<string, number>) {
+    this.updateState((state) => {
+      const stage = state.stages.find((s) => s.id === id)
+      if (stage) {
+        stage.params = { ...stage.params, ...params }
+      }
+    })
+  }
+
+  getTimeDomainData(): Float32Array {
+    const buffer = new Float32Array(this.analyser?.fftSize ?? 2048)
+    if (this.analyser) {
+      this.analyser.getFloatTimeDomainData(buffer)
     }
-    return stage.instance
+    return buffer
   }
 
-  private ensureDelayStageNodes() {
-    const stage = this.ensureDelayStage()
-    if (!stage) return null
-    this.ensureStageInstance(stage)
-    return this.delayStageNodes
+  getFrequencyData(): Float32Array {
+    const buffer = new Float32Array((this.analyser?.fftSize ?? 2048) / 2)
+    if (this.analyser) {
+      this.analyser.getFloatFrequencyData(buffer)
+    }
+    return buffer
+  }
+
+  get sampleRate(): number {
+    return this.ctx?.sampleRate ?? 44100
+  }
+
+  private updateState(mutator: (state: EngineState) => void) {
+    mutator(this.state)
+    this.emitState()
+    this.rebuildSignalChain()
+  }
+
+  private emitState() {
+    const snapshot = this.cloneState()
+    for (const sub of this.subscribers) {
+      sub(snapshot)
+    }
+  }
+
+  private cloneState(): EngineState {
+    return {
+      source: this.state.source,
+      oscillator: { ...this.state.oscillator },
+      mic: { ...this.state.mic },
+      stages: this.state.stages.map((s) => ({
+        id: s.id,
+        kind: s.kind,
+        bypassed: s.bypassed,
+        params: { ...s.params },
+      })) as StageState[],
+    }
   }
 
   private rebuildSignalChain() {
     if (!this.ctx || !this.analyser || !this.masterGain) return
 
-    const source =
-      this.sourceType === 'microphone' ? this.micSource : this.oscillator
-    if (!source) return
-
+    // Disconnect all existing connections
+    // Only disconnect outputs - disconnecting inputs would break internal wiring
+    // for complex stages like delay (input connects to internal nodes)
     this.oscillator?.disconnect()
     this.micSource?.disconnect()
-    for (const node of this.processingNodes) {
-      node.instance?.input.disconnect()
-      node.instance?.output.disconnect()
+    for (const instance of this.stageInstances.values()) {
+      instance.output.disconnect()
     }
 
-    let current: AudioNode = source
-    for (const node of this.processingNodes) {
-      if (node.bypassed) continue
-      const instance = this.ensureStageInstance(node)
-      if (!instance) continue
-      current.connect(instance.input)
-      current = instance.output
+    // Sync source nodes with state
+    this.syncOscillatorNode()
+    this.syncMicSource()
+
+    // Determine active source
+    let chosenSource: AudioNode | null = null
+    let chosenType: SourceType = this.state.source
+
+    if (this.state.source === 'microphone' && this.micSource) {
+      chosenSource = this.micSource
+    } else if (this.state.source === 'oscillator' && this.oscillator) {
+      chosenSource = this.oscillator
+    } else if (
+      this.state.source === 'microphone' &&
+      !this.micSource &&
+      this.oscillator
+    ) {
+      chosenSource = this.oscillator
+      chosenType = 'oscillator'
+    } else if (
+      this.state.source === 'oscillator' &&
+      !this.oscillator &&
+      this.micSource
+    ) {
+      chosenSource = this.micSource
+      chosenType = 'microphone'
     }
 
+    if (chosenType !== this.state.source) {
+      this.state.source = chosenType
+      this.emitState()
+    }
+
+    if (!chosenSource) return
+
+    // Build the processing chain
+    const activeIds = new Set<string>()
+    let current: AudioNode = chosenSource
+
+    for (const stageState of this.state.stages) {
+      activeIds.add(stageState.id)
+      const instance = this.ensureStageInstance(stageState)
+      instance.update(stageState.params)
+
+      if (!stageState.bypassed) {
+        current.connect(instance.input)
+        current = instance.output
+      }
+    }
+
+    // Garbage collect orphaned instances
+    for (const [id, instance] of this.stageInstances) {
+      if (!activeIds.has(id)) {
+        instance.dispose()
+        this.stageInstances.delete(id)
+      }
+    }
+
+    // Connect to output
     current.connect(this.masterGain)
     current.connect(this.analyser)
   }
 
-  private ensureGainStage() {
-    if (!this.ctx) return null
-    let existing = this.findProcessingNode(this.gainStageId)
-    if (!existing) {
-      existing = {
-        id: this.gainStageId,
-        bypassed: true,
-        instance: null,
-        createNode: (ctx) => {
-          const gain = ctx.createGain()
-          gain.gain.value = this.gainLevel
-          return { input: gain, output: gain }
-        },
+  private syncOscillatorNode() {
+    if (!this.ctx) return
+    if (this.state.oscillator.running) {
+      if (!this.oscillator) {
+        this.oscillator = this.ctx.createOscillator()
+        this.oscillator.start()
       }
-      this.processingNodes.push(existing)
+      this.oscillator.type = this.state.oscillator.type
+      this.oscillator.frequency.value = this.state.oscillator.frequency
+    } else {
+      if (this.oscillator) {
+        this.oscillator.stop()
+        this.oscillator.disconnect()
+        this.oscillator = null
+      }
     }
-    return existing
   }
 
-  private ensurePanStage() {
-    if (!this.ctx) return null
-    let existing = this.findProcessingNode(this.panStageId)
-    if (!existing) {
-      existing = {
-        id: this.panStageId,
-        bypassed: true,
-        instance: null,
-        createNode: (ctx) => {
-          const pan = ctx.createStereoPanner()
-          pan.pan.value = this.panValue
-          return { input: pan, output: pan }
-        },
-      }
-      this.processingNodes.push(existing)
-    }
-    return existing
+  private syncMicSource() {
+    if (!this.ctx) return
+    if (!this.state.mic.enabled) return
+    if (this.micSource) return
+    if (!this.micStream) return
+    this.micSource = this.ctx.createMediaStreamSource(this.micStream)
   }
 
-  private ensureDelayStage() {
-    if (!this.ctx) return null
-    let existing = this.findProcessingNode(this.delayStageId)
-    if (!existing) {
-      existing = {
-        id: this.delayStageId,
-        bypassed: true,
-        instance: null,
-        createNode: (ctx) => {
-          const input = ctx.createGain()
-          const output = ctx.createGain()
-          const delay = ctx.createDelay(2)
-          const wetGain = ctx.createGain()
-          const dryGain = ctx.createGain()
-          const feedbackGain = ctx.createGain()
+  private ensureStageInstance(stage: StageState): StageInstance {
+    const existing = this.stageInstances.get(stage.id)
+    if (existing) return existing
 
-          delay.delayTime.value = this.delayTime
-          wetGain.gain.value = this.delayWet
-          dryGain.gain.value = 1 - this.delayWet
-          feedbackGain.gain.value = this.delayFeedback
-
-          input.connect(dryGain)
-          dryGain.connect(output)
-
-          input.connect(delay)
-          delay.connect(wetGain)
-          wetGain.connect(output)
-
-          delay.connect(feedbackGain)
-          feedbackGain.connect(delay)
-
-          this.delayStageNodes = { delay, wetGain, dryGain, feedbackGain }
-
-          return { input, output }
-        },
-      }
-      this.processingNodes.push(existing)
-    }
-    return existing
+    const created = this.createStageInstance(stage)
+    this.stageInstances.set(stage.id, created)
+    return created
   }
 
-  private findProcessingNode(id: string) {
-    return this.processingNodes.find((node) => node.id === id)
+  private createStageInstance(stage: StageState): StageInstance {
+    if (!this.ctx) {
+      throw new Error('AudioContext not initialized')
+    }
+
+    // Use type assertion through unknown to handle the discriminated union
+    const definition = STAGE_REGISTRY[stage.kind]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return definition.createInstance(this.ctx, stage.params as any)
   }
 }
