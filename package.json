@@ -1,0 +1,22 @@
+{
+  "name": "signals",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "autoprefixer": "^10.4.22",
+    "solid-devtools": "^0.34.4",
+    "tailwindcss": "^4.1.17",
+    "vite": "^7.2.6",
+    "vite-plugin-solid": "^2.11.10"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.17",
+    "solid-js": "^1.9.10",
+    "uplot": "^1.6.32"
+  }
+}
