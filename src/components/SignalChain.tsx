@@ -207,10 +207,10 @@ export function SignalChain(props: Props) {
           </>
         )}
 
-        {/* Output / Master */}
-        <div class="flex flex-col w-24 bg-gray-800 rounded-lg overflow-hidden shrink-0">
+        {/* Output level meter */}
+        <div class="flex flex-col w-32 bg-gray-800 rounded-lg overflow-hidden shrink-0">
           <div class="px-2 py-1.5 bg-gray-700">
-            <span class="text-xs font-semibold">Master</span>
+            <span class="text-xs font-semibold">Output</span>
           </div>
           <div class="flex-1 p-2 flex items-center justify-center">
             <LevelMeter engine={props.engine} orientation="vertical" />

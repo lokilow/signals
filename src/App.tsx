@@ -53,7 +53,7 @@ export function App() {
             {/* Master level meter */}
             <div class="bg-gray-900 rounded-lg p-4 flex flex-col items-center">
               <span class="text-xs font-semibold text-gray-400 mb-3">
-                Level
+                Master
               </span>
               <LevelMeter engine={engine()!} orientation="vertical" />
             </div>
