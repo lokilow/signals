@@ -146,67 +146,65 @@ export function LevelMeter(props: Props) {
         </div>
       )}
 
-      {/* Meter bars container */}
-      <div class={`flex ${isVertical() ? 'flex-row' : 'flex-col'} gap-0.5`}>
+      {/* Meter bars with labels underneath */}
+      <div class={`flex ${isVertical() ? 'flex-row' : 'flex-col'} gap-1`}>
         {/* Left channel */}
-        <div
-          class={`flex ${isVertical() ? 'flex-col-reverse' : 'flex-row'} gap-px bg-gray-900 p-0.5 rounded ${isVertical() ? 'h-32 w-4' : 'w-full h-4'}`}
-        >
-          <For each={SEGMENTS}>
-            {(segment, index) => {
-              const levelDb = () => getDb(levels().left)
-              const lit = () => isSegmentLit(segment.db, levelDb())
-              const isPeakHold = () =>
-                isPeakHoldSegment(segment.db, index(), peakHoldL())
+        <div class="flex flex-col items-center gap-0.5">
+          <div
+            class={`flex ${isVertical() ? 'flex-col-reverse' : 'flex-row'} gap-px bg-gray-900 p-0.5 rounded ${isVertical() ? 'h-32 w-4' : 'w-full h-4'}`}
+          >
+            <For each={SEGMENTS}>
+              {(segment, index) => {
+                const levelDb = () => getDb(levels().left)
+                const lit = () => isSegmentLit(segment.db, levelDb())
+                const isPeakHold = () =>
+                  isPeakHoldSegment(segment.db, index(), peakHoldL())
 
-              return (
-                <div
-                  class={`${isVertical() ? 'w-full flex-1' : 'h-full flex-1'} rounded-sm transition-opacity duration-75 ${
-                    lit()
-                      ? segment.color
-                      : isPeakHold()
-                        ? 'bg-white'
-                        : 'bg-gray-800'
-                  } ${isPeakHold() || lit() ? 'opacity-100' : 'opacity-40'}`}
-                />
-              )
-            }}
-          </For>
+                return (
+                  <div
+                    class={`${isVertical() ? 'w-full flex-1' : 'h-full flex-1'} rounded-sm transition-opacity duration-75 ${
+                      lit()
+                        ? segment.color
+                        : isPeakHold()
+                          ? 'bg-white'
+                          : 'bg-gray-800'
+                    } ${isPeakHold() || lit() ? 'opacity-100' : 'opacity-40'}`}
+                  />
+                )
+              }}
+            </For>
+          </div>
+          <span class="text-[9px] text-gray-500 font-mono">L</span>
         </div>
 
         {/* Right channel */}
-        <div
-          class={`flex ${isVertical() ? 'flex-col-reverse' : 'flex-row'} gap-px bg-gray-900 p-0.5 rounded ${isVertical() ? 'h-32 w-4' : 'w-full h-4'}`}
-        >
-          <For each={SEGMENTS}>
-            {(segment, index) => {
-              const levelDb = () => getDb(levels().right)
-              const lit = () => isSegmentLit(segment.db, levelDb())
-              const isPeakHold = () =>
-                isPeakHoldSegment(segment.db, index(), peakHoldR())
+        <div class="flex flex-col items-center gap-0.5">
+          <div
+            class={`flex ${isVertical() ? 'flex-col-reverse' : 'flex-row'} gap-px bg-gray-900 p-0.5 rounded ${isVertical() ? 'h-32 w-4' : 'w-full h-4'}`}
+          >
+            <For each={SEGMENTS}>
+              {(segment, index) => {
+                const levelDb = () => getDb(levels().right)
+                const lit = () => isSegmentLit(segment.db, levelDb())
+                const isPeakHold = () =>
+                  isPeakHoldSegment(segment.db, index(), peakHoldR())
 
-              return (
-                <div
-                  class={`${isVertical() ? 'w-full flex-1' : 'h-full flex-1'} rounded-sm transition-opacity duration-75 ${
-                    lit()
-                      ? segment.color
-                      : isPeakHold()
-                        ? 'bg-white'
-                        : 'bg-gray-800'
-                  } ${isPeakHold() || lit() ? 'opacity-100' : 'opacity-40'}`}
-                />
-              )
-            }}
-          </For>
+                return (
+                  <div
+                    class={`${isVertical() ? 'w-full flex-1' : 'h-full flex-1'} rounded-sm transition-opacity duration-75 ${
+                      lit()
+                        ? segment.color
+                        : isPeakHold()
+                          ? 'bg-white'
+                          : 'bg-gray-800'
+                    } ${isPeakHold() || lit() ? 'opacity-100' : 'opacity-40'}`}
+                  />
+                )
+              }}
+            </For>
+          </div>
+          <span class="text-[9px] text-gray-500 font-mono">R</span>
         </div>
-      </div>
-
-      {/* Labels */}
-      <div
-        class={`flex ${isVertical() ? 'flex-col' : 'flex-row'} text-[9px] text-gray-500 font-mono ${isVertical() ? 'pl-0.5 justify-between h-32' : 'pt-0.5 justify-around w-full'}`}
-      >
-        <span>L</span>
-        <span>R</span>
       </div>
 
       {/* Controls */}

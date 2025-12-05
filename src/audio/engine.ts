@@ -69,6 +69,7 @@ export class AudioEngine {
   private analyser: AnalyserNode | null = null
   private analyserL: AnalyserNode | null = null
   private analyserR: AnalyserNode | null = null
+  private meterInput: GainNode | null = null // Stereo gain node for meter input (handles mono->stereo)
   private splitter: ChannelSplitterNode | null = null
   private masterGain: GainNode | null = null
   private oscillator: OscillatorNode | null = null
@@ -114,7 +115,14 @@ export class AudioEngine {
     this.analyser.channelCount = 2
     this.analyser.channelCountMode = 'explicit'
 
-    // Stereo metering: split into L/R channels
+    // Stereo metering setup:
+    // 1. meterInput: Stereo gain node that upmixes mono to stereo automatically
+    // 2. Splitter: separates stereo into L/R for individual metering
+    this.meterInput = this.ctx.createGain()
+    this.meterInput.channelCount = 2
+    this.meterInput.channelCountMode = 'explicit'
+    this.meterInput.channelInterpretation = 'speakers' // This makes mono duplicate to both channels
+
     this.splitter = this.ctx.createChannelSplitter(2)
     this.analyserL = this.ctx.createAnalyser()
     this.analyserR = this.ctx.createAnalyser()
@@ -123,7 +131,8 @@ export class AudioEngine {
     this.analyserL.smoothingTimeConstant = 0
     this.analyserR.smoothingTimeConstant = 0
 
-    // Connect splitter to L/R analysers
+    // Connect meterInput -> splitter -> L/R analysers
+    this.meterInput.connect(this.splitter)
     this.splitter.connect(this.analyserL, 0)
     this.splitter.connect(this.analyserR, 1)
 
@@ -490,8 +499,9 @@ export class AudioEngine {
     // Connect to output and metering
     current.connect(this.masterGain)
     current.connect(this.analyser)
-    if (this.splitter) {
-      current.connect(this.splitter)
+    // Connect to stereo meter (meterInput upmixes mono to stereo)
+    if (this.meterInput) {
+      current.connect(this.meterInput)
     }
   }
 
