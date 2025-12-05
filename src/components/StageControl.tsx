@@ -4,8 +4,13 @@ import { STAGE_REGISTRY, type StageParamDef } from '../audio/stages.ts'
 
 interface Props {
   stage: StageState
+  index: number
+  total: number
   onBypassToggle: () => void
   onParamChange: (key: string, value: number) => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+  onRemove: () => void
 }
 
 export function StageControl(props: Props) {
@@ -15,16 +20,41 @@ export function StageControl(props: Props) {
 
   return (
     <div class="flex flex-col gap-2 p-3 bg-gray-800 rounded">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-2">
         <span class="text-sm font-semibold">{definition().label}</span>
-        <button
-          class={`px-2 py-1 text-sm rounded ${
-            !props.stage.bypassed ? 'bg-red-600' : 'bg-green-600'
-          }`}
-          onClick={props.onBypassToggle}
-        >
-          {!props.stage.bypassed ? 'Bypass' : 'Enable'}
-        </button>
+        <div class="flex gap-1">
+          <button
+            class="px-2 py-1 text-xs rounded bg-gray-600 hover:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed"
+            onClick={props.onMoveUp}
+            disabled={props.index === 0}
+            title="Move up"
+          >
+            ↑
+          </button>
+          <button
+            class="px-2 py-1 text-xs rounded bg-gray-600 hover:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed"
+            onClick={props.onMoveDown}
+            disabled={props.index === props.total - 1}
+            title="Move down"
+          >
+            ↓
+          </button>
+          <button
+            class={`px-2 py-1 text-xs rounded ${
+              !props.stage.bypassed ? 'bg-red-600' : 'bg-green-600'
+            }`}
+            onClick={props.onBypassToggle}
+          >
+            {!props.stage.bypassed ? 'Bypass' : 'Enable'}
+          </button>
+          <button
+            class="px-2 py-1 text-xs rounded bg-red-800 hover:bg-red-700"
+            onClick={props.onRemove}
+            title="Remove"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       <For each={paramEntries()}>

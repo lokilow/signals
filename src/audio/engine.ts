@@ -176,6 +176,65 @@ export class AudioEngine {
     })
   }
 
+  /**
+   * Add a new stage to the chain
+   * @param kind - The type of stage to add
+   * @param afterId - Optional ID of stage to insert after. If omitted, appends to end.
+   * @returns The ID of the newly created stage
+   */
+  addStage(kind: StageKind, afterId?: string): string {
+    const id = `${kind}-${crypto.randomUUID().slice(0, 8)}`
+    this.updateState((state) => {
+      const newStage: StageState = {
+        id,
+        kind,
+        bypassed: false,
+        params: getDefaultParams(kind),
+      }
+
+      if (afterId) {
+        const index = state.stages.findIndex((s) => s.id === afterId)
+        if (index !== -1) {
+          state.stages.splice(index + 1, 0, newStage)
+          return
+        }
+      }
+      state.stages.push(newStage)
+    })
+    return id
+  }
+
+  /**
+   * Remove a stage from the chain
+   * @param id - The ID of the stage to remove
+   */
+  removeStage(id: string) {
+    this.updateState((state) => {
+      const index = state.stages.findIndex((s) => s.id === id)
+      if (index !== -1) {
+        state.stages.splice(index, 1)
+      }
+    })
+  }
+
+  /**
+   * Move a stage up or down in the chain
+   * @param id - The ID of the stage to move
+   * @param direction - 'up' moves toward source, 'down' moves toward output
+   */
+  moveStage(id: string, direction: 'up' | 'down') {
+    this.updateState((state) => {
+      const index = state.stages.findIndex((s) => s.id === id)
+      if (index === -1) return
+
+      const newIndex = direction === 'up' ? index - 1 : index + 1
+      if (newIndex < 0 || newIndex >= state.stages.length) return
+
+      const [stage] = state.stages.splice(index, 1)
+      state.stages.splice(newIndex, 0, stage!)
+    })
+  }
+
   getTimeDomainData(): Float32Array {
     const buffer = new Float32Array(this.analyser?.fftSize ?? 2048)
     if (this.analyser) {

@@ -1,12 +1,20 @@
 import { For } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { onCleanup, onMount } from 'solid-js'
-import type { WaveformType, AudioEngine, EngineState } from '../audio/engine.ts'
+import type {
+  WaveformType,
+  AudioEngine,
+  EngineState,
+  StageKind,
+} from '../audio/engine.ts'
+import { STAGE_REGISTRY } from '../audio/stages.ts'
 import { StageControl } from './StageControl.tsx'
 
 interface Props {
   engine: AudioEngine
 }
+
+const STAGE_KINDS = Object.keys(STAGE_REGISTRY) as StageKind[]
 
 export function OscillatorControls(props: Props) {
   const [state, setState] = createStore<EngineState>(props.engine.getState())
@@ -49,6 +57,10 @@ export function OscillatorControls(props: Props) {
 
   const handleSelectSource = (next: 'oscillator' | 'microphone') => {
     props.engine.setSource(next)
+  }
+
+  const handleAddStage = (kind: StageKind) => {
+    props.engine.addStage(kind)
   }
 
   return (
@@ -115,19 +127,48 @@ export function OscillatorControls(props: Props) {
         />
       </div>
 
-      <For each={state.stages}>
-        {(stage) => (
-          <StageControl
-            stage={stage}
-            onBypassToggle={() =>
-              props.engine.setStageBypass(stage.id, !stage.bypassed)
-            }
-            onParamChange={(key: string, val: number) =>
-              props.engine.setStageParams(stage.id, { [key]: val })
-            }
-          />
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-gray-300">Signal Chain</span>
+          <div class="flex gap-1">
+            <For each={STAGE_KINDS}>
+              {(kind) => (
+                <button
+                  class="px-2 py-1 text-xs rounded bg-blue-700 hover:bg-blue-600"
+                  onClick={() => handleAddStage(kind)}
+                >
+                  + {STAGE_REGISTRY[kind].label}
+                </button>
+              )}
+            </For>
+          </div>
+        </div>
+
+        <For each={state.stages}>
+          {(stage, index) => (
+            <StageControl
+              stage={stage}
+              index={index()}
+              total={state.stages.length}
+              onBypassToggle={() =>
+                props.engine.setStageBypass(stage.id, !stage.bypassed)
+              }
+              onParamChange={(key: string, val: number) =>
+                props.engine.setStageParams(stage.id, { [key]: val })
+              }
+              onMoveUp={() => props.engine.moveStage(stage.id, 'up')}
+              onMoveDown={() => props.engine.moveStage(stage.id, 'down')}
+              onRemove={() => props.engine.removeStage(stage.id)}
+            />
+          )}
+        </For>
+
+        {state.stages.length === 0 && (
+          <div class="text-sm text-gray-500 text-center py-4">
+            No stages in chain. Add one above.
+          </div>
         )}
-      </For>
+      </div>
 
       <button
         class={`px-4 py-2 rounded ${
