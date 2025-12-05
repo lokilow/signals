@@ -1,5 +1,12 @@
 export type WaveformType = 'sine' | 'square' | 'sawtooth' | 'triangle'
 
+export type ProcessingNode = {
+  id: string
+  createNode: (ctx: AudioContext) => AudioNode
+  node: AudioNode | null
+  bypassed: boolean
+}
+
 export class AudioEngine {
   private ctx: AudioContext | null = null
   private oscillator: OscillatorNode | null = null
@@ -18,23 +25,23 @@ export class AudioEngine {
 
   async init() {
     this.ctx = new AudioContext()
-    
+
     this.analyser = this.ctx.createAnalyser()
     this.analyser.fftSize = this.fftSize
     this.analyser.smoothingTimeConstant = 0
-    
+
     this.gain = this.ctx.createGain()
     this.gain.gain.value = 0.3
-    
+
     this.analyser.connect(this.gain)
     this.gain.connect(this.ctx.destination)
   }
 
   start(type: WaveformType, frequency: number) {
     if (!this.ctx || !this.analyser) return
-    
+
     this.stop()
-    
+
     this.oscillator = this.ctx.createOscillator()
     this.oscillator.type = type
     this.oscillator.frequency.value = frequency

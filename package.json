@@ -6,6 +6,7 @@
   "devDependencies": {
     "@types/bun": "latest",
     "autoprefixer": "^10.4.22",
+    "prettier": "^3.7.4",
     "solid-devtools": "^0.34.4",
     "tailwindcss": "^4.1.17",
     "vite": "^7.2.6",

@@ -22,16 +22,13 @@ export function Waveform(props: Props) {
       height: 200,
       title: 'Waveform',
       scales: {
-        y: { range: [-1, 1] }
+        y: { range: [-1, 1] },
       },
-      series: [
-        {},
-        { stroke: '#22c55e', width: 1 }
-      ],
+      series: [{}, { stroke: '#22c55e', width: 1 }],
       axes: [
         { show: true, label: 'Sample' },
-        { show: true, label: 'Amplitude' }
-      ]
+        { show: true, label: 'Amplitude' },
+      ],
     }
 
     plot = new uPlot(opts, [xData, yData], container)

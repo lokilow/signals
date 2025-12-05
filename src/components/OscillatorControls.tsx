@@ -1,5 +1,5 @@
 import { createSignal } from 'solid-js'
-import type { WaveformType, AudioEngine } from '../audio/engine'
+import type { WaveformType, AudioEngine } from '../audio/engine.ts'
 
 interface Props {
   engine: AudioEngine
@@ -34,7 +34,7 @@ export function OscillatorControls(props: Props) {
   return (
     <div class="flex flex-col gap-4 p-4 bg-gray-900 rounded-lg">
       <div class="flex gap-2">
-        {(['sine', 'square', 'sawtooth', 'triangle'] as const).map(type => (
+        {(['sine', 'square', 'sawtooth', 'triangle'] as const).map((type) => (
           <button
             class={`px-3 py-1 rounded ${waveform() === type ? 'bg-blue-600' : 'bg-gray-700'}`}
             onClick={() => handleWaveform(type)}
@@ -43,7 +43,7 @@ export function OscillatorControls(props: Props) {
           </button>
         ))}
       </div>
-      
+
       <div class="flex items-center gap-4">
         <label class="text-sm">Frequency: {frequency()} Hz</label>
         <input

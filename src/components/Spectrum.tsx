@@ -24,17 +24,17 @@ export function Spectrum(props: Props) {
       height: 200,
       title: 'Spectrum',
       scales: {
-        x: { range: [0, props.sampleRate / 4] },  // Show up to Nyquist/2
-        y: { range: [-100, 0] }  // dB scale
+        x: { range: [0, props.sampleRate / 4] }, // Show up to Nyquist/2
+        y: { range: [-100, 0] }, // dB scale
       },
       series: [
         {},
-        { stroke: '#3b82f6', width: 1, fill: 'rgba(59, 130, 246, 0.1)' }
+        { stroke: '#3b82f6', width: 1, fill: 'rgba(59, 130, 246, 0.1)' },
       ],
       axes: [
         { show: true, label: 'Frequency (Hz)' },
-        { show: true, label: 'Magnitude (dB)' }
-      ]
+        { show: true, label: 'Magnitude (dB)' },
+      ],
     }
 
     plot = new uPlot(opts, [xData, yData], container)
