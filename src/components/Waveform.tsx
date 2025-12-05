@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function Waveform(props: Props) {
-  let container: HTMLDivElement
+  let container!: HTMLDivElement
   let plot: uPlot
   let rafId: number
 

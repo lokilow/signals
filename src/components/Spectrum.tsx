@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function Spectrum(props: Props) {
-  let container: HTMLDivElement
+  let container!: HTMLDivElement
   let plot: uPlot
   let rafId: number
 
