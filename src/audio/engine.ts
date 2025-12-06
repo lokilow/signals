@@ -114,9 +114,6 @@ export class AudioEngine {
       new URL('./worklets/wasm-gain-processor.js', import.meta.url).href
     )
     await this.ctx.audioWorklet.addModule(
-      new URL('./worklets/uiua-gain-processor.js', import.meta.url).href
-    )
-    await this.ctx.audioWorklet.addModule(
       new URL('./worklets/uiua-worklet-processor.js', import.meta.url).href
     )
     this.workletReady = true
@@ -560,9 +557,7 @@ export class AudioEngine {
 
     // Check if we're trying to create a WASM worklet before it's ready
     if (
-      (stage.kind === 'wasm-gain' ||
-        stage.kind === 'uiua-gain' ||
-        stage.kind === 'uiua-worklet-gain') &&
+      (stage.kind === 'wasm-gain' || stage.kind === 'uiua-worklet-gain') &&
       !this.workletReady
     ) {
       throw new Error(

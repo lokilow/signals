@@ -8,10 +8,6 @@ cd audio-worklets/wasm-gain
 ./build.sh
 cd ..
 
-cd uiua-gain
-./build.sh
-cd ..
-
 cd uiua-worklet
 ./build.sh
 cd ../..

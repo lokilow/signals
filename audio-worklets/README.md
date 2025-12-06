@@ -4,9 +4,30 @@ This directory contains Rust-based WASM audio processors for the Signals project
 
 ## Structure
 
-Each audio worklet is a separate Rust crate compiled to WebAssembly:
+- `wasm-gain/` - Simple gain processor (baseline Rust example)
+- `uiua-worklet/` - Unified Uiua-based audio processor system
 
-- `wasm-gain/` - Simple gain processor (foundation for future Uiua-based nodes)
+## Architecture: Unified Worklet System
+
+The `uiua-worklet` crate provides a **single WASM binary** for all Uiua-based effects. Adding a new effect only requires writing a `.ua` file - no additional Rust code, build scripts, or configuration needed.
+
+### How It Works
+
+1. **Compile-time embedding**: The `define_worklet!` macro embeds `.ua` files at compile time using `include_str!`
+2. **Single binary**: All Uiua effects share one WASM module (~6MB, 1.5MB gzipped)
+3. **Runtime routing**: The AudioWorklet processor routes to different effects based on `workletType` parameter
+4. **Simple additions**: New effects = new `.ua` file + one line in `lib.rs`
+
+### Example: gain.ua
+
+```uiua
+# Gain worklet - multiply samples by gain value
+# Stack: [samples gain]
+# Result: [samples * gain]
+×
+```
+
+That's it! The macro handles all the wasm-bindgen boilerplate.
 
 ## Building
 
@@ -32,18 +53,128 @@ npm run build:wasm
 # Build specific worklet
 cd audio-worklets/wasm-gain
 ./build.sh
+
+cd audio-worklets/uiua-worklet
+./build.sh
 ```
 
-## Adding New Worklets
+## Adding New Uiua Effects
 
-1. Create new crate in this directory
-2. Add to workspace members in `Cargo.toml`
-3. Add build script following `wasm-gain/build.sh` pattern
-4. Update `scripts/build-wasm.sh` to include new worklet
-5. Update `vite.config.ts` to copy new WASM files
-6. Create AudioWorklet processor in `src/audio/worklets/`
-7. Register in `src/audio/stages.ts`
+### 1. Write the Uiua code
 
-## Future: Uiua Integration
+Create `audio-worklets/uiua-worklet/src/worklets/your-effect.ua`:
 
-This infrastructure is designed to support [Uiua](https://uiua.org) v0.17.2 as a Rust library for building audio processors. The `wasm-gain` worklet demonstrates the pattern that will be extended with Uiua-based signal processing.
+```uiua
+# Your effect - describe what it does
+# Stack: [samples param1 param2 ...]
+# Result: [processed samples]
+# Your Uiua code here
+```
+
+### 2. Register in lib.rs
+
+Add one line to `audio-worklets/uiua-worklet/src/lib.rs`:
+
+```rust
+define_worklet!(YourEffectWorklet, "worklets/your-effect.ua", "Your effect description");
+```
+
+### 3. Update the processor
+
+Add your worklet type to `src/audio/worklets/uiua-worklet-processor.js`:
+
+```javascript
+import init, { UiuaGainWorklet, YourEffectWorklet } from '...'
+
+class UiuaWorkletProcessor extends AudioWorkletProcessor {
+  async initWasm(wasmBytes) {
+    await init(wasmBytes);
+    switch (this.workletType) {
+      case 'gain':
+        this.processor = UiuaGainWorklet.new();
+        break;
+      case 'your-effect':
+        this.processor = YourEffectWorklet.new();
+        break;
+    }
+  }
+}
+```
+
+### 4. Register in stages.ts
+
+Add to `src/audio/stages.ts`:
+
+```typescript
+// Add type
+export type StageParamsMap = {
+  // ...
+  'uiua-worklet-your-effect': { param1: number; param2: number }
+}
+
+// Add stage definition
+STAGE_REGISTRY['uiua-worklet-your-effect'] = {
+  name: 'Your Effect',
+  create: (ctx, params) => ({
+    type: 'uiua-worklet-your-effect',
+    input: ctx.createGain(),
+    output: ctx.createGain(),
+    audioWorklet: new AudioWorkletNode(ctx, 'uiua-worklet-processor', {
+      processorOptions: { workletType: 'your-effect' },
+    }),
+  }),
+  // ...
+}
+```
+
+### 5. Rebuild and test
+
+```bash
+npm run build:wasm
+npm run dev
+```
+
+## Technical Details
+
+### Uiua Version
+
+- Using Uiua 0.17.2 with `features = ["web"]`, `default-features = false`
+- wasm-bindgen pinned to `=0.2.93` (required by Uiua 0.17.2)
+- wasm-opt disabled due to compatibility issues
+
+### AudioWorklet Context Limitations
+
+AudioWorklet runs in a separate thread with restricted APIs:
+
+- **TextDecoder/TextEncoder**: Polyfilled in `TextEncoderPolyfill.js`
+- **URL API**: Not available - WASM loaded from main thread via `fetch()` and `postMessage()`
+
+### Array API Workaround
+
+Uiua's `Array` type has private fields. We use `rows()` iterator + `format!("{}", row)` + parse as a workaround:
+
+```rust
+match result {
+    Value::Num(arr) => {
+        for (i, row) in arr.rows().take(length).enumerate() {
+            let s = format!("{}", row);
+            if let Ok(value) = s.trim().parse::<f64>() {
+                samples[i] = value as f32;
+            }
+        }
+    }
+}
+```
+
+## Workspace Configuration
+
+All worklets share dependencies via `Cargo.toml` workspace:
+
+```toml
+[workspace]
+resolver = "2"
+members = ["wasm-gain", "uiua-worklet"]
+
+[workspace.dependencies]
+wasm-bindgen = "=0.2.93"
+```
