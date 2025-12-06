@@ -19,10 +19,18 @@ A WebAudio-based audio processing application built with SolidJS and TypeScript.
 
 ```bash
 bun install
-bunx vite        # dev server
-bunx tsc --noEmit   # type check
-bunx vite build     # production build
+bun run dev         # dev server (accessible on local network at http://mbp.local:5173)
+bun run typecheck   # type check
+bun run build       # production build
+bun run preview     # preview production build
 ```
+
+### Testing on Mobile Devices
+
+The dev server is configured to be accessible from your local network:
+- Start the dev server: `bun run dev`
+- On your phone/tablet (same WiFi): visit `http://<your-hostname>.local:5173`
+- Example: `http://my-macbook.local:5173`
 
 ## Development
 
