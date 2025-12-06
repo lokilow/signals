@@ -2,24 +2,8 @@
 // This runs in the audio worklet thread (not the main thread)
 
 // Polyfill TextDecoder/TextEncoder for AudioWorklet context (wasm-bindgen requires these)
-if (typeof TextDecoder === 'undefined') {
-  globalThis.TextDecoder = class TextDecoder {
-    decode(bytes) {
-      return String.fromCharCode.apply(null, new Uint8Array(bytes))
-    }
-  }
-}
-if (typeof TextEncoder === 'undefined') {
-  globalThis.TextEncoder = class TextEncoder {
-    encode(str) {
-      const buf = new Uint8Array(str.length)
-      for (let i = 0; i < str.length; i++) {
-        buf[i] = str.charCodeAt(i)
-      }
-      return buf
-    }
-  }
-}
+// AudioWorklet contexts don't have these defined in the spec yet
+import './TextEncoderPolyfill.js'
 
 import init, { WasmGainProcessor } from '../../../audio-worklets/wasm-gain/pkg/wasm_gain.js'
 
