@@ -1,6 +1,26 @@
 // AudioWorklet processor for WASM-based gain
 // This runs in the audio worklet thread (not the main thread)
 
+// Polyfill TextDecoder/TextEncoder for AudioWorklet context (wasm-bindgen requires these)
+if (typeof TextDecoder === 'undefined') {
+  globalThis.TextDecoder = class TextDecoder {
+    decode(bytes) {
+      return String.fromCharCode.apply(null, new Uint8Array(bytes))
+    }
+  }
+}
+if (typeof TextEncoder === 'undefined') {
+  globalThis.TextEncoder = class TextEncoder {
+    encode(str) {
+      const buf = new Uint8Array(str.length)
+      for (let i = 0; i < str.length; i++) {
+        buf[i] = str.charCodeAt(i)
+      }
+      return buf
+    }
+  }
+}
+
 import init, { WasmGainProcessor } from '../../../audio-worklets/wasm-gain/pkg/wasm_gain.js'
 
 let wasmInitialized = false

@@ -75,6 +75,7 @@ export class AudioEngine {
   private oscillator: OscillatorNode | null = null
   private micStream: MediaStream | null = null
   private micSource: MediaStreamAudioSourceNode | null = null
+  private workletReady: boolean = false
 
   private stageInstances = new Map<string, StageInstance>()
   private subscribers = new Set<(state: EngineState) => void>()
@@ -112,6 +113,7 @@ export class AudioEngine {
     await this.ctx.audioWorklet.addModule(
       new URL('./worklets/wasm-gain-processor.js', import.meta.url).href
     )
+    this.workletReady = true
 
     // Main analyser for waveform/spectrum (stereo)
     this.analyser = this.ctx.createAnalyser()
@@ -548,6 +550,13 @@ export class AudioEngine {
   private createStageInstance(stage: StageState): StageInstance {
     if (!this.ctx) {
       throw new Error('AudioContext not initialized')
+    }
+
+    // Check if we're trying to create a WASM worklet before it's ready
+    if (stage.kind === 'wasm-gain' && !this.workletReady) {
+      throw new Error(
+        'AudioWorklet not yet registered. Please wait for initialization to complete.'
+      )
     }
 
     // Use type assertion through unknown to handle the discriminated union
