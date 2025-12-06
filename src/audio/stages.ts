@@ -24,6 +24,7 @@ export type StageParamsMap = {
   delay: { time: number; wet: number; feedback: number }
   'wasm-gain': { gain: number }
   'uiua-gain': { gain: number }
+  'uiua-worklet-gain': { gain: number }
 }
 
 export type StageKind = keyof StageParamsMap
@@ -275,6 +276,56 @@ export const STAGE_REGISTRY: StageRegistry = {
         })
         .catch((err) => {
           console.error('Failed to load Uiua WASM module:', err)
+        })
+
+      return {
+        input: workletNode,
+        output: workletNode,
+        update: (p) => {
+          if (typeof p.gain === 'number') {
+            const gainValue = clamp(p.gain, 0, 2)
+            workletNode.port.postMessage({ type: 'setGain', value: gainValue })
+          }
+        },
+        dispose: () => workletNode.disconnect(),
+      }
+    },
+  },
+
+  'uiua-worklet-gain': {
+    kind: 'uiua-worklet-gain',
+    label: 'Uiua Worklet Gain',
+    params: {
+      gain: {
+        min: 0,
+        max: 2,
+        step: 0.01,
+        default: 1,
+        label: 'Level',
+        format: (v) => `${v.toFixed(2)}x`,
+      },
+    },
+    createInstance: (ctx, params) => {
+      const workletNode = new AudioWorkletNode(ctx, 'uiua-worklet-processor', {
+        processorOptions: {
+          gain: params.gain,
+          workletType: 'gain', // Specify which .ua worklet to use
+        },
+      })
+
+      // Load and send WASM bytes to the worklet
+      fetch(
+        new URL(
+          '../../audio-worklets/uiua-worklet/pkg/uiua_worklet_bg.wasm',
+          import.meta.url
+        )
+      )
+        .then((response) => response.arrayBuffer())
+        .then((wasmBytes) => {
+          workletNode.port.postMessage({ type: 'initWasm', wasmBytes })
+        })
+        .catch((err) => {
+          console.error('Failed to load Uiua worklet WASM module:', err)
         })
 
       return {

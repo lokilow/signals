@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["wasm-gain", "uiua-gain"]
+members = ["wasm-gain", "uiua-gain", "uiua-worklet"]
 
 [workspace.package]
 version = "0.1.0"
