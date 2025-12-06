@@ -214,6 +214,21 @@ export const STAGE_REGISTRY: StageRegistry = {
         processorOptions: { gain: params.gain },
       })
 
+      // Load and send WASM bytes to the worklet
+      fetch(
+        new URL(
+          '../../audio-worklets/wasm-gain/pkg/wasm_gain_bg.wasm',
+          import.meta.url
+        )
+      )
+        .then((response) => response.arrayBuffer())
+        .then((wasmBytes) => {
+          workletNode.port.postMessage({ type: 'initWasm', wasmBytes })
+        })
+        .catch((err) => {
+          console.error('Failed to load WASM module:', err)
+        })
+
       return {
         input: workletNode,
         output: workletNode,

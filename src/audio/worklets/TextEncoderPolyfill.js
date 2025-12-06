@@ -44,9 +44,28 @@
   };
 
   // TextDecoder polyfill
-  function TextDecoder() {}
+  function TextDecoder(encoding, options) {
+    // wasm-bindgen uses utf-8 encoding
+    this.encoding = encoding || 'utf-8';
+    this.fatal = (options && options.fatal) || false;
+    this.ignoreBOM = (options && options.ignoreBOM) || false;
+  }
 
   TextDecoder.prototype.decode = function (octets) {
+    // Handle edge cases - wasm-bindgen calls decode() with no args during init
+    if (octets === undefined || octets === null) {
+      return '';
+    }
+
+    if (octets.length === 0) {
+      return '';
+    }
+
+    // Ensure we have a Uint8Array
+    if (!(octets instanceof Uint8Array)) {
+      octets = new Uint8Array(octets);
+    }
+
     let string = '';
     let i = 0;
     while (i < octets.length) {

@@ -17,9 +17,6 @@ class WasmGainWorkletProcessor extends AudioWorkletProcessor {
     this.processor = null
     this.gain = options.processorOptions?.gain ?? 1.0
 
-    // Initialize WASM asynchronously
-    this.initWasm()
-
     // Listen for parameter changes from the main thread
     this.port.onmessage = (e) => {
       if (e.data.type === 'setGain') {
@@ -27,20 +24,27 @@ class WasmGainWorkletProcessor extends AudioWorkletProcessor {
         if (this.processor) {
           this.processor.set_gain(this.gain)
         }
+      } else if (e.data.type === 'initWasm') {
+        // Main thread sends WASM bytes
+        this.initWasm(e.data.wasmBytes)
       }
     }
   }
 
-  async initWasm() {
+  async initWasm(wasmBytes) {
     if (!wasmInitialized) {
       // Initialize WASM module once per worklet context
-      wasmInstance = await init()
+      // Pass the WASM bytes directly instead of relying on URL
+      wasmInstance = await init(wasmBytes)
       wasmInitialized = true
     }
 
     // Create processor instance
     this.processor = new WasmGainProcessor()
     this.processor.set_gain(this.gain)
+
+    // Notify main thread that WASM is ready
+    this.port.postMessage({ type: 'wasmReady' })
   }
 
   process(inputs, outputs, parameters) {
