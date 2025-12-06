@@ -120,12 +120,21 @@ export class AudioEngine {
       ? import.meta.env.BASE_URL
       : `${import.meta.env.BASE_URL}/`
 
-    await this.ctx.audioWorklet.addModule(
-      `${baseUrl}audio-worklets/wasm-gain-processor.js`
-    )
-    await this.ctx.audioWorklet.addModule(
-      `${baseUrl}audio-worklets/uiua-worklet-processor.js`
-    )
+    const loadWorklet = async (path: string) => {
+      try {
+        await this.ctx!.audioWorklet.addModule(`${baseUrl}${path}`)
+      } catch (e) {
+        console.warn(
+          `Failed to load worklet from ${baseUrl}${path}, trying root fallback...`,
+          e
+        )
+        // Fallback to absolute root path if base path fails
+        await this.ctx!.audioWorklet.addModule(`/${path}`)
+      }
+    }
+
+    await loadWorklet('audio-worklets/wasm-gain-processor.js')
+    await loadWorklet('audio-worklets/uiua-worklet-processor.js')
     this.workletReady = true
 
     // Main analyser for waveform/spectrum (stereo)
