@@ -1,7 +1,6 @@
 import { createSignal } from 'solid-js'
 import { AudioEngine } from './audio/engine.ts'
-import { Waveform } from './components/Waveform.tsx'
-import { Spectrum } from './components/Spectrum.tsx'
+import { Visualizer } from './components/Visualizer.tsx'
 import { SignalChain } from './components/SignalChain.tsx'
 import { LevelMeter } from './components/LevelMeter.tsx'
 import { AudioDebug } from './components/AudioDebug.tsx'
@@ -48,18 +47,10 @@ export function App() {
       ) : (
         <div class="flex flex-col gap-4 md:gap-6">
           {/* Main visualization area */}
-          <div class="flex flex-col md:flex-row gap-4 items-stretch">
-            {/* Waveform */}
-            <div class="flex-1 bg-gray-900 rounded-lg p-3 md:p-4">
-              <Waveform getData={() => engine()!.getTimeDomainData()} />
-            </div>
-
-            {/* Spectrum */}
-            <div class="flex-1 bg-gray-900 rounded-lg p-3 md:p-4">
-              <Spectrum
-                getData={() => engine()!.getFrequencyData()}
-                sampleRate={engine()!.sampleRate}
-              />
+          <div class="flex flex-col md:flex-row gap-4 items-stretch min-h-[200px]">
+            {/* Visualizer (Combined Waveform/Spectrum) */}
+            <div class="flex-1">
+              <Visualizer engine={engine()!} />
             </div>
 
             {/* Master level meter */}

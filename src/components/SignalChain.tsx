@@ -46,7 +46,7 @@ export function SignalChain(props: Props) {
           <For each={STAGE_KINDS}>
             {(kind) => (
               <button
-                class="px-2 py-1 text-[10px] rounded bg-blue-700 hover:bg-blue-600 active:bg-blue-500"
+                class="px-3 py-2 text-xs font-medium rounded bg-blue-700 hover:bg-blue-600 active:bg-blue-500 touch-manipulation transition-colors shadow-sm"
                 onClick={() => props.engine.addStage(kind)}
               >
                 + {STAGE_REGISTRY[kind].label}

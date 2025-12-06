@@ -32,7 +32,7 @@ export function StageCard(props: Props) {
           {definition().label}
         </span>
         <button
-          class="text-gray-400 hover:text-red-400 active:text-red-300 text-xs leading-none p-1 -m-1 touch-manipulation transition-colors"
+          class="text-gray-400 hover:text-red-400 active:text-red-300 text-lg leading-none p-2 -mr-2 touch-manipulation transition-colors"
           onClick={props.onRemove}
           title="Remove"
         >
@@ -109,7 +109,7 @@ export function StageCard(props: Props) {
       <div class="flex items-center justify-between px-2 py-1.5 bg-gray-750 border-t border-gray-700">
         <div class="flex gap-1">
           <button
-            class="px-1.5 py-0.5 text-[10px] font-medium rounded bg-gray-700 text-gray-300 hover:bg-gray-600 active:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation transition-colors"
+            class="px-3 py-1.5 text-[10px] font-medium rounded bg-gray-700 text-gray-300 hover:bg-gray-600 active:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation transition-colors"
             onClick={props.onMoveLeft}
             disabled={props.index === 0}
             title="Move Left"
@@ -117,7 +117,7 @@ export function StageCard(props: Props) {
             ←
           </button>
           <button
-            class="px-1.5 py-0.5 text-[10px] font-medium rounded bg-gray-700 text-gray-300 hover:bg-gray-600 active:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation transition-colors"
+            class="px-3 py-1.5 text-[10px] font-medium rounded bg-gray-700 text-gray-300 hover:bg-gray-600 active:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation transition-colors"
             onClick={props.onMoveRight}
             disabled={props.index === props.total - 1}
             title="Move Right"
