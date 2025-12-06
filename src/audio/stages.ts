@@ -24,6 +24,7 @@ export type StageParamsMap = {
   delay: { time: number; wet: number; feedback: number }
   'wasm-gain': { gain: number }
   'uiua-worklet-gain': { gain: number }
+  'uiua-worklet-biquad': { cutoff: number }
 }
 
 export type StageKind = keyof StageParamsMap
@@ -317,6 +318,71 @@ export const STAGE_REGISTRY: StageRegistry = {
             console.log('[UiuaWorklet] Updating gain to', gainValue)
             // Always use postMessage - AudioParam doesn't reliably propagate to WASM worklets
             workletNode.port.postMessage({ type: 'setGain', value: gainValue })
+          }
+        },
+        dispose: () => workletNode.disconnect(),
+      }
+    },
+  },
+
+  'uiua-worklet-biquad': {
+    kind: 'uiua-worklet-biquad',
+    label: 'Uiua Biquad Filter',
+    params: {
+      cutoff: {
+        min: 0,
+        max: 1,
+        step: 0.01,
+        default: 0.5,
+        label: 'Cutoff',
+        format: (v) => `${(v * 100).toFixed(0)}%`,
+      },
+    },
+    createInstance: (ctx, params) => {
+      console.log('[UiuaBiquad] Creating instance with params:', params)
+      const workletNode = new AudioWorkletNode(ctx, 'uiua-worklet-processor', {
+        processorOptions: {
+          workletType: 'biquad',
+        },
+      })
+
+      // Load and send WASM bytes to the worklet
+      fetch(
+        new URL(
+          '../../audio-worklets/uiua-worklet/pkg/uiua_worklet_bg.wasm',
+          import.meta.url
+        )
+      )
+        .then((response) => response.arrayBuffer())
+        .then((wasmBytes) => {
+          workletNode.port.postMessage({ type: 'initWasm', wasmBytes })
+          // Set initial param after WASM loads
+          workletNode.port.postMessage({
+            type: 'setParam',
+            index: 0,
+            value: params.cutoff,
+          })
+        })
+        .catch((err) => {
+          console.error('Failed to load Uiua biquad WASM module:', err)
+        })
+
+      workletNode.port.onmessage = (e) => {
+        console.log('[UiuaBiquad] Message from worklet:', e.data)
+      }
+
+      return {
+        input: workletNode,
+        output: workletNode,
+        update: (p) => {
+          if (typeof p.cutoff === 'number') {
+            const cutoffValue = clamp(p.cutoff, 0, 1)
+            console.log('[UiuaBiquad] Updating cutoff to', cutoffValue)
+            workletNode.port.postMessage({
+              type: 'setParam',
+              index: 0,
+              value: cutoffValue,
+            })
           }
         },
         dispose: () => workletNode.disconnect(),

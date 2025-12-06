@@ -4,7 +4,7 @@
 // Polyfill TextDecoder/TextEncoder for AudioWorklet context
 import './TextEncoderPolyfill.js'
 
-import init, { UiuaGainWorklet, wasm_memory, process_audio } from '../../../audio-worklets/uiua-worklet/pkg/uiua_worklet.js'
+import init, { UiuaGainWorklet, UiuaBiquadWorklet, UiuaDelayWorklet, wasm_memory, process_audio } from '../../../audio-worklets/uiua-worklet/pkg/uiua_worklet.js'
 
 let wasmInitialized = false
 
@@ -27,6 +27,8 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
     this.processor = null
     this.workletType = options.processorOptions?.workletType || 'gain'
     this.gain = options.processorOptions?.gain ?? 1.0
+    this.params = [0, 0, 0, 0] // Generic params for stateful worklets
+    this.paramsUsed = 1 // How many params to pass to process_block
     this.memory = null
     this.inputView = null
     this.outputView = null
@@ -40,6 +42,15 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
       if (e.data.type === 'setGain') {
         const value = typeof e.data.value === 'number' ? e.data.value : this.gain
         this.gain = Math.min(Math.max(value, 0), 2)
+      } else if (e.data.type === 'setParam') {
+        // Stateful worklet param update
+        const { index, value } = e.data
+        if (typeof index === 'number' && index >= 0 && index < 4) {
+          this.params[index] = value
+          if (this.processor?.set_param) {
+            this.processor.set_param(index, value)
+          }
+        }
       } else if (e.data.type === 'initWasm') {
         // Main thread sends WASM bytes
         this.initWasm(e.data.wasmBytes)
@@ -60,11 +71,18 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
       switch (this.workletType) {
         case 'gain':
           this.processor = new UiuaGainWorklet()
+          this.isStateful = false
           break
-        // Future worklets can be added here:
-        // case 'reverb':
-        //   this.processor = new UiuaReverbWorklet(this.bufferSize)
-        //   break
+        case 'biquad':
+          this.processor = new UiuaBiquadWorklet()
+          this.isStateful = true
+          this.paramsUsed = 1 // cutoff
+          break
+        case 'delay':
+          this.processor = new UiuaDelayWorklet()
+          this.isStateful = true
+          this.paramsUsed = 2 // wet, feedback
+          break
         default:
           throw new Error(`Unknown worklet type: ${this.workletType}`)
       }
@@ -183,10 +201,18 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
 
       try {
         inputBuffer.set(inputChannel)
-        this.processor.process_block(frames, this.gain)
+
+        if (this.isStateful) {
+          // Stateful worklet: process_block(frames, params_used)
+          this.processor.process_block(frames, this.paramsUsed)
+        } else {
+          // Stateless worklet (gain): process_block(frames, gain)
+          this.processor.process_block(frames, this.gain)
+        }
+
         outputChannel.set(outputBuffer.subarray(0, frames))
         if (!this.loggedSharedInit) {
-          console.log('[UiuaWorklet] Shared buffer processing active (frames:', frames, ')')
+          console.log('[UiuaWorklet] Shared buffer processing active (frames:', frames, ') stateful:', this.isStateful)
           this.loggedSharedInit = true
         }
 
