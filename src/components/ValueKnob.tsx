@@ -11,7 +11,7 @@ interface Props {
   format?: (v: number) => string
 }
 
-export function Knob(props: Props) {
+export function ValueKnob(props: Props) {
   const size = () => props.size ?? 48
   const [isDragging, setIsDragging] = createSignal(false)
   
@@ -54,30 +54,27 @@ export function Knob(props: Props) {
     return -145 + (percent * 290)
   }
 
-  return (
-    <div class="flex flex-col items-center gap-1">
-        <div 
-            class={`relative rounded-full bg-gray-900 border border-gray-700 touch-none select-none ${
-              props.disabled 
-                ? 'opacity-50 cursor-not-allowed' 
-                : isDragging() 
-                  ? 'cursor-grabbing border-gray-500' 
-                  : 'cursor-grab hover:border-gray-500'
-            }`}
-            style={{ width: `${size()}px`, height: `${size()}px` }}
-            onPointerDown={handleStart}
-        >
-        {/* Tick marks */}
-        <div class="absolute inset-0 rounded-full border-2 border-gray-800 box-border" />
-        
-        {/* Indicator */}
-        <div 
-            class="absolute w-1 h-[40%] bg-blue-500 left-1/2 top-[10%] origin-bottom rounded-full shadow-[0_0_4px_rgba(59,130,246,0.5)]"
-            style={{ 
-                transform: `translateX(-50%) rotate(${rotation()}deg)`,
-            }}
-        />
-        </div>
-    </div>
-  )
-}
+    return (
+          <div
+              class={`relative rounded-full bg-gray-900 border border-gray-700 touch-none select-none ${
+                props.disabled
+                  ? 'opacity-50 cursor-not-allowed'
+                  : isDragging()
+                    ? 'cursor-grabbing border-gray-500'
+                    : 'cursor-grab hover:border-gray-500'
+              }`}
+              style={{ width: `${size()}px`, height: `${size()}px` }}
+              onPointerDown={handleStart}
+          >
+          {/* Tick marks */}
+          <div class="absolute inset-0 rounded-full border-2 border-gray-800 box-border" />
+  
+          {/* Indicator */}
+          <div
+              class="absolute w-1 h-[40%] bg-blue-500 left-1/2 top-[10%] origin-bottom rounded-full shadow-[0_0_4px_rgba(59,130,246,0.5)]"
+              style={{
+                  transform: `translateX(-50%) rotate(${rotation()}deg)`,
+              }}
+          />
+          </div>
+    )}

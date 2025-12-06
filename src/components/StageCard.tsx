@@ -2,7 +2,8 @@ import { For, Show } from 'solid-js'
 import type { StageState } from '../audio/engine.ts'
 import { STAGE_REGISTRY, type StageParamDef } from '../audio/stages.ts'
 import { VerticalSlider } from './VerticalSlider.tsx'
-import { Knob } from './Knob.tsx'
+import { ValueKnob } from './ValueKnob.tsx'
+import { LeftRightKnob } from './LeftRightKnob.tsx'
 
 interface Props {
   stage: StageState
@@ -43,10 +44,43 @@ export function StageCard(props: Props) {
       {/* Parameters */}
       <div class="flex-1 p-3 bg-gray-800 flex flex-col items-center justify-center min-h-[160px]">
         <Show
-          when={paramEntries().length === 1}
+          when={props.stage.kind === 'pan'}
           fallback={
-            // Multi-parameter view (Knobs)
-            <div class="flex flex-wrap justify-center gap-x-2 gap-y-3">
+            <Show
+              when={paramEntries().length === 1}
+              fallback={
+                // Multi-parameter view (Knobs)
+                <div class="flex flex-wrap justify-center gap-x-2 gap-y-3">
+                  <For each={paramEntries()}>
+                    {([key, paramDef]) => {
+                      const value = () =>
+                        (props.stage.params as Record<string, number>)[key] ??
+                        paramDef.default
+
+                      return (
+                        <div class="flex flex-col items-center w-[56px]">
+                          <ValueKnob
+                            value={value()}
+                            min={paramDef.min}
+                            max={paramDef.max}
+                            onChange={(val) => props.onParamChange(key, val)}
+                            disabled={props.stage.bypassed}
+                            size={42}
+                          />
+                          <span class="text-[9px] text-gray-400 mt-1 text-center w-full truncate leading-tight">
+                            {paramDef.label}
+                          </span>
+                          <span class="text-[9px] text-blue-300 font-mono leading-tight">
+                            {paramDef.format(value())}
+                          </span>
+                        </div>
+                      )
+                    }}
+                  </For>
+                </div>
+              }
+            >
+              {/* Single parameter view (Vertical Slider) */}
               <For each={paramEntries()}>
                 {([key, paramDef]) => {
                   const value = () =>
@@ -54,29 +88,28 @@ export function StageCard(props: Props) {
                     paramDef.default
 
                   return (
-                    <div class="flex flex-col items-center w-[56px]">
-                      <Knob
+                    <div class="flex flex-col items-center w-full h-full gap-2">
+                      <div class="flex justify-between w-full text-[10px] font-medium px-1">
+                        <span class="text-gray-400">{paramDef.label}</span>
+                        <span class="text-blue-300 font-mono">
+                          {paramDef.format(value())}
+                        </span>
+                      </div>
+                      <VerticalSlider
                         value={value()}
                         min={paramDef.min}
                         max={paramDef.max}
                         onChange={(val) => props.onParamChange(key, val)}
                         disabled={props.stage.bypassed}
-                        size={42}
                       />
-                      <span class="text-[9px] text-gray-400 mt-1 text-center w-full truncate leading-tight">
-                        {paramDef.label}
-                      </span>
-                      <span class="text-[9px] text-blue-300 font-mono leading-tight">
-                        {paramDef.format(value())}
-                      </span>
                     </div>
                   )
                 }}
               </For>
-            </div>
+            </Show>
           }
         >
-          {/* Single parameter view (Vertical Slider) */}
+          {/* Pan specific view */}
           <For each={paramEntries()}>
             {([key, paramDef]) => {
               const value = () =>
@@ -84,19 +117,20 @@ export function StageCard(props: Props) {
                 paramDef.default
 
               return (
-                <div class="flex flex-col items-center w-full h-full gap-2">
+                <div class="flex flex-col items-center w-full justify-center gap-2">
                   <div class="flex justify-between w-full text-[10px] font-medium px-1">
                     <span class="text-gray-400">{paramDef.label}</span>
                     <span class="text-blue-300 font-mono">
                       {paramDef.format(value())}
                     </span>
                   </div>
-                  <VerticalSlider
+                  <LeftRightKnob
                     value={value()}
                     min={paramDef.min}
                     max={paramDef.max}
                     onChange={(val) => props.onParamChange(key, val)}
                     disabled={props.stage.bypassed}
+                    size={56}
                   />
                 </div>
               )
