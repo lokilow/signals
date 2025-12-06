@@ -84,20 +84,7 @@ export class AudioEngine {
     source: 'oscillator',
     oscillator: { running: false, type: 'sine', frequency: 440 },
     mic: { enabled: false },
-    stages: [
-      {
-        id: 'gain-stage',
-        kind: 'uiua-worklet-gain',
-        bypassed: true,
-        params: getDefaultParams('uiua-worklet-gain'),
-      },
-      {
-        id: 'filter-stage',
-        kind: 'uiua-worklet-biquad',
-        bypassed: true,
-        params: getDefaultParams('uiua-worklet-biquad'),
-      },
-    ],
+    stages: [],
   }
 
   async init() {
