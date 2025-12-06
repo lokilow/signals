@@ -1,5 +1,5 @@
 import { For } from 'solid-js'
-import { createStore } from 'solid-js/store'
+import { createStore, reconcile } from 'solid-js/store'
 import { onCleanup, onMount } from 'solid-js'
 import type {
   AudioEngine,
@@ -22,7 +22,7 @@ export function SignalChain(props: Props) {
 
   onMount(() => {
     const unsubscribe = props.engine.subscribe((next: EngineState) =>
-      setState(() => next)
+      setState(reconcile(next))
     )
     onCleanup(unsubscribe)
   })
