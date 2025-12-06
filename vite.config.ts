@@ -19,6 +19,7 @@ const localHost = `${getLocalHostname()}.local`
 console.log('Vite allowing host:', localHost)
 
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH || '/',
   server: {
     host: true, // Listen on all addresses including LAN
     allowedHosts: [localHost, '.local'], // Allow .local pattern

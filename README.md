@@ -32,6 +32,13 @@ The dev server is configured to be accessible from your local network:
 - On your phone/tablet (same WiFi): visit `http://<your-hostname>.local:5173`
 - Example: `http://my-macbook.local:5173`
 
+## Deployment
+
+Automatically deploys to GitHub Pages on push to `main`:
+- **Production URL**: `https://<username>.github.io/signals/`
+- Workflow: `.github/workflows/deploy.yml`
+- Enable in repo settings: Settings → Pages → Source: "GitHub Actions"
+
 ## Development
 
 See [CLAUDE.md](./CLAUDE.md) for development principles and gotchas.
