@@ -108,6 +108,11 @@ export class AudioEngine {
   async init() {
     this.ctx = new AudioContext()
 
+    // Register AudioWorklet processors
+    await this.ctx.audioWorklet.addModule(
+      new URL('./worklets/wasm-gain-processor.js', import.meta.url).href
+    )
+
     // Main analyser for waveform/spectrum (stereo)
     this.analyser = this.ctx.createAnalyser()
     this.analyser.fftSize = 2048

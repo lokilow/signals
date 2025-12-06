@@ -22,6 +22,7 @@ export type StageParamsMap = {
   gain: { gain: number }
   pan: { pan: number }
   delay: { time: number; wet: number; feedback: number }
+  'wasm-gain': { gain: number }
 }
 
 export type StageKind = keyof StageParamsMap
@@ -39,7 +40,10 @@ export type StageDefinition<K extends StageKind> = {
   kind: K
   label: string
   params: { [P in keyof StageParamsMap[K]]: StageParamDef }
-  createInstance: (ctx: AudioContext, params: StageParamsMap[K]) => StageInstance
+  createInstance: (
+    ctx: AudioContext,
+    params: StageParamsMap[K]
+  ) => StageInstance
 }
 
 // Type-safe registry type
@@ -191,10 +195,44 @@ export const STAGE_REGISTRY: StageRegistry = {
       }
     },
   },
+
+  'wasm-gain': {
+    kind: 'wasm-gain',
+    label: 'WASM Gain',
+    params: {
+      gain: {
+        min: 0,
+        max: 2,
+        step: 0.01,
+        default: 1,
+        label: 'Level',
+        format: (v) => `${v.toFixed(2)}x`,
+      },
+    },
+    createInstance: (ctx, params) => {
+      const workletNode = new AudioWorkletNode(ctx, 'wasm-gain-processor', {
+        processorOptions: { gain: params.gain },
+      })
+
+      return {
+        input: workletNode,
+        output: workletNode,
+        update: (p) => {
+          if (typeof p.gain === 'number') {
+            const gainValue = clamp(p.gain, 0, 2)
+            workletNode.port.postMessage({ type: 'setGain', value: gainValue })
+          }
+        },
+        dispose: () => workletNode.disconnect(),
+      }
+    },
+  },
 }
 
 // Helper to get default params for a stage kind
-export function getDefaultParams<K extends StageKind>(kind: K): StageParamsMap[K] {
+export function getDefaultParams<K extends StageKind>(
+  kind: K
+): StageParamsMap[K] {
   const def = STAGE_REGISTRY[kind]
   const params: Record<string, number> = {}
   for (const [key, paramDef] of Object.entries(def.params)) {
