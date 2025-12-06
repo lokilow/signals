@@ -103,6 +103,18 @@ export class AudioEngine {
   async init() {
     this.ctx = new AudioContext()
 
+    // Ensure context is running (fix for mobile browsers starting in suspended state)
+    if (this.ctx.state === 'suspended') {
+      await this.ctx.resume()
+    }
+
+    // Check for AudioWorklet support
+    if (!this.ctx.audioWorklet) {
+      throw new Error(
+        'AudioWorklet is not supported in this browser. Please use a modern browser (Chrome, Firefox, Safari 14.5+) and ensure you are using HTTPS if on Safari.'
+      )
+    }
+
     // Register AudioWorklet processors
     await this.ctx.audioWorklet.addModule(
       new URL('./worklets/wasm-gain-processor.js', import.meta.url).href
