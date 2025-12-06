@@ -63,11 +63,30 @@ export function App() {
             </div>
 
             {/* Master level meter */}
-            <div class="bg-gray-900 rounded-lg p-3 md:p-4 flex md:flex-col items-center justify-center md:justify-start gap-4 md:gap-0">
-              <span class="text-xs font-semibold text-gray-400 md:mb-3">
+            <div class="bg-gray-900 rounded-lg p-3 md:p-4 flex flex-col md:items-center md:justify-start shrink-0 gap-2 md:gap-0">
+              {/* Desktop Header */}
+              <span class="hidden md:block text-xs font-semibold text-gray-400 md:mb-3">
                 Master
               </span>
-              <LevelMeter engine={engine()!} orientation="vertical" />
+              
+              {/* Mobile Header */}
+              <div class="flex md:hidden justify-between items-center mb-1">
+                <span class="text-xs font-semibold text-gray-400">Master Output</span>
+              </div>
+
+              {/* Desktop: Vertical Meter */}
+              <div class="hidden md:block">
+                <LevelMeter engine={engine()!} orientation="vertical" />
+              </div>
+
+              {/* Mobile: Horizontal Meter (Compact) */}
+              <div class="block md:hidden w-full">
+                <LevelMeter 
+                  engine={engine()!} 
+                  orientation="horizontal" 
+                  showScale={false} 
+                />
+              </div>
             </div>
           </div>
 
