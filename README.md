@@ -43,6 +43,31 @@ Automatically deploys to GitHub Pages on push to `main`:
 
 See [CLAUDE.md](./CLAUDE.md) for development principles and gotchas.
 
+### AudioWorklet Workflow
+
+This project uses a robust automated pipeline to manage AudioWorklet processors and WASM modules, ensuring compatibility across development (Vite) and production (GitHub Pages).
+
+- **Source Processors**: JavaScript processor files live in `src/audio/worklets/`.
+- **WASM Projects**: Rust/Uiua projects live in `audio-worklets/<project-name>/`.
+- **Automated Build**: The `scripts/build-wasm.sh` script is the single source of truth. It:
+  1. Compiles all Rust projects in `audio-worklets/`.
+  2. Copies generated `pkg/` folders to `public/audio-worklets/`.
+  3. Copies all source JS processors to `public/audio-worklets/`.
+
+The `public/audio-worklets/` directory is treated as a **build artifact** (gitignored) and is automatically populated when you run `bun run dev` or `bun run build`.
+
+To add a new worklet:
+1. Create your Rust project in `audio-worklets/my-new-worklet/`.
+2. Create your JS processor in `src/audio/worklets/my-new-processor.js`.
+3. Run `bun run dev` - the script will auto-detect and sync everything.
+
+### Mobile Testing
+
+AudioWorklet requires a **Secure Context** (HTTPS or localhost). 
+- **Localhost**: Works fine on your computer.
+- **Mobile Device**: Accessing via `http://<ip>:5173` will likely fail on Safari/iOS because it treats local IP addresses as insecure.
+  - **Fix**: Use a tunneling service (like ngrok) or configure Vite with HTTPS/certs to test AudioWorklets on a physical mobile device.
+
 ## Future Ideas
 
 - WASM AudioWorklet nodes (custom DSP in Rust/C++)

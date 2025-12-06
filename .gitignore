@@ -40,3 +40,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 audio-worklets/**/target
 audio-worklets/**/pkg
 audio-worklets/**/Cargo.lock
+
+# Generated public assets for AudioWorklets
+public/audio-worklets/

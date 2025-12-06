@@ -116,11 +116,15 @@ export class AudioEngine {
     }
 
     // Register AudioWorklet processors
+    const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+      ? import.meta.env.BASE_URL
+      : `${import.meta.env.BASE_URL}/`
+
     await this.ctx.audioWorklet.addModule(
-      new URL('./worklets/wasm-gain-processor.js', import.meta.url).href
+      `${baseUrl}audio-worklets/wasm-gain-processor.js`
     )
     await this.ctx.audioWorklet.addModule(
-      new URL('./worklets/uiua-worklet-processor.js', import.meta.url).href
+      `${baseUrl}audio-worklets/uiua-worklet-processor.js`
     )
     this.workletReady = true
 
