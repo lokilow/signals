@@ -118,7 +118,7 @@ export function StageCard(props: Props) {
 
               return (
                 <div class="flex flex-col items-center w-full justify-center gap-2">
-                  <div class="flex justify-between w-full text-[10px] font-medium px-1">
+                  <div class="flex flex-col items-center text-[10px] font-medium px-1 mb-1">
                     <span class="text-gray-400">{paramDef.label}</span>
                     <span class="text-blue-300 font-mono">
                       {paramDef.format(value())}
