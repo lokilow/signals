@@ -87,21 +87,15 @@ export class AudioEngine {
     stages: [
       {
         id: 'gain-stage',
-        kind: 'gain',
+        kind: 'uiua-worklet-gain',
         bypassed: true,
-        params: getDefaultParams('gain'),
+        params: getDefaultParams('uiua-worklet-gain'),
       },
       {
-        id: 'pan-stage',
-        kind: 'pan',
+        id: 'filter-stage',
+        kind: 'uiua-worklet-biquad',
         bypassed: true,
-        params: getDefaultParams('pan'),
-      },
-      {
-        id: 'delay-stage',
-        kind: 'delay',
-        bypassed: true,
-        params: getDefaultParams('delay'),
+        params: getDefaultParams('uiua-worklet-biquad'),
       },
     ],
   }
