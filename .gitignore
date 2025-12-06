@@ -43,3 +43,5 @@ audio-worklets/**/Cargo.lock
 
 # Generated public assets for AudioWorklets
 public/audio-worklets/
+
+.tool-versions
