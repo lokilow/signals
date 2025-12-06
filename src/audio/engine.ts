@@ -113,6 +113,9 @@ export class AudioEngine {
     await this.ctx.audioWorklet.addModule(
       new URL('./worklets/wasm-gain-processor.js', import.meta.url).href
     )
+    await this.ctx.audioWorklet.addModule(
+      new URL('./worklets/uiua-gain-processor.js', import.meta.url).href
+    )
     this.workletReady = true
 
     // Main analyser for waveform/spectrum (stereo)
@@ -553,7 +556,10 @@ export class AudioEngine {
     }
 
     // Check if we're trying to create a WASM worklet before it's ready
-    if (stage.kind === 'wasm-gain' && !this.workletReady) {
+    if (
+      (stage.kind === 'wasm-gain' || stage.kind === 'uiua-gain') &&
+      !this.workletReady
+    ) {
       throw new Error(
         'AudioWorklet not yet registered. Please wait for initialization to complete.'
       )

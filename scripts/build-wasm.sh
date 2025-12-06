@@ -6,6 +6,10 @@ echo "Building WASM worklets..."
 
 cd audio-worklets/wasm-gain
 ./build.sh
+cd ..
+
+cd uiua-gain
+./build.sh
 cd ../..
 
 echo "✓ All WASM worklets built"

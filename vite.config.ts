@@ -34,6 +34,14 @@ function copyWasmPlugin() {
           src: 'audio-worklets/wasm-gain/pkg/wasm_gain.js',
           dest: 'dist/audio-worklets/wasm-gain/pkg/wasm_gain.js',
         },
+        {
+          src: 'audio-worklets/uiua-gain/pkg/uiua_gain_bg.wasm',
+          dest: 'dist/audio-worklets/uiua-gain/pkg/uiua_gain_bg.wasm',
+        },
+        {
+          src: 'audio-worklets/uiua-gain/pkg/uiua_gain.js',
+          dest: 'dist/audio-worklets/uiua-gain/pkg/uiua_gain.js',
+        },
       ]
 
       for (const { src, dest } of wasmSources) {
