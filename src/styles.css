@@ -1,1 +1,20 @@
 @import 'tailwindcss';
+
+/* Mobile-first optimizations */
+@layer base {
+  /* Improve touch targets on mobile */
+  input[type='range'] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Smooth scrolling for horizontal signal chain */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  /* Better touch feedback */
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

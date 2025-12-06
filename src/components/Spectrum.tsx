@@ -20,8 +20,8 @@ export function Spectrum(props: Props) {
     const yData = new Float64Array(bins)
 
     const opts: uPlot.Options = {
-      width: 600,
-      height: 200,
+      width: container.clientWidth || 300,
+      height: Math.min(200, window.innerHeight * 0.25),
       title: 'Spectrum',
       scales: {
         x: { range: [0, props.sampleRate / 4] }, // Show up to Nyquist/2
@@ -38,6 +38,16 @@ export function Spectrum(props: Props) {
     }
 
     plot = new uPlot(opts, [xData, yData], container)
+
+    // Resize handler for responsive behavior
+    const handleResize = () => {
+      plot.setSize({
+        width: container.clientWidth,
+        height: Math.min(200, window.innerHeight * 0.25),
+      })
+    }
+    window.addEventListener('resize', handleResize)
+    onCleanup(() => window.removeEventListener('resize', handleResize))
 
     const update = () => {
       const data = props.getData()

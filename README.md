@@ -9,6 +9,7 @@ A WebAudio-based audio processing application built with SolidJS and TypeScript.
 - **Real-time Visualization** - Waveform and spectrum analyzers
 - **Stereo Metering** - L/R level meters with peak hold and clipping indicators
 - **Multiple Sources** - Oscillator (with waveform selection) or microphone input
+- **Mobile-First Design** - Fully responsive, works on phones, tablets, and desktops
 
 ## Tech Stack
 

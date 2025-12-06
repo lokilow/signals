@@ -45,16 +45,16 @@ export function AudioDebug(props: Props) {
   }
 
   return (
-    <div class="fixed bottom-4 right-4 z-50">
+    <div class="fixed bottom-3 right-3 md:bottom-4 md:right-4 z-50">
       <button
-        class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm font-mono"
+        class="px-3 py-2 bg-gray-800 hover:bg-gray-700 active:bg-gray-600 rounded-lg text-sm font-mono touch-manipulation shadow-lg"
         onClick={() => setIsOpen(!isOpen())}
       >
         {isOpen() ? 'Hide Debug' : 'Debug'}
       </button>
 
       <Show when={isOpen()}>
-        <div class="absolute bottom-12 right-0 w-96 max-h-[80vh] overflow-auto bg-gray-900 border border-gray-700 rounded-lg p-4 text-xs font-mono">
+        <div class="absolute bottom-12 right-0 w-[calc(100vw-1.5rem)] sm:w-96 max-h-[70vh] sm:max-h-[80vh] overflow-auto bg-gray-900 border border-gray-700 rounded-lg p-3 md:p-4 text-xs font-mono shadow-xl">
           <h3 class="text-sm font-bold mb-3 text-gray-200">
             Audio Graph Debug
           </h3>

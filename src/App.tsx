@@ -19,9 +19,9 @@ export function App() {
   }
 
   return (
-    <div class="min-h-screen bg-gray-950 text-white p-6">
-      <header class="mb-6">
-        <h1 class="text-xl font-bold text-gray-200">Signals</h1>
+    <div class="min-h-screen bg-gray-950 text-white p-3 sm:p-4 md:p-6">
+      <header class="mb-4 md:mb-6">
+        <h1 class="text-lg sm:text-xl font-bold text-gray-200">Signals</h1>
       </header>
 
       {!ready() ? (
@@ -34,16 +34,16 @@ export function App() {
           </button>
         </div>
       ) : (
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-4 md:gap-6">
           {/* Main visualization area */}
-          <div class="flex gap-4 items-stretch">
+          <div class="flex flex-col md:flex-row gap-4 items-stretch">
             {/* Waveform */}
-            <div class="flex-1 bg-gray-900 rounded-lg p-4">
+            <div class="flex-1 bg-gray-900 rounded-lg p-3 md:p-4">
               <Waveform getData={() => engine()!.getTimeDomainData()} />
             </div>
 
             {/* Spectrum */}
-            <div class="flex-1 bg-gray-900 rounded-lg p-4">
+            <div class="flex-1 bg-gray-900 rounded-lg p-3 md:p-4">
               <Spectrum
                 getData={() => engine()!.getFrequencyData()}
                 sampleRate={engine()!.sampleRate}
@@ -51,8 +51,8 @@ export function App() {
             </div>
 
             {/* Master level meter */}
-            <div class="bg-gray-900 rounded-lg p-4 flex flex-col items-center">
-              <span class="text-xs font-semibold text-gray-400 mb-3">
+            <div class="bg-gray-900 rounded-lg p-3 md:p-4 flex md:flex-col items-center justify-center md:justify-start gap-4 md:gap-0">
+              <span class="text-xs font-semibold text-gray-400 md:mb-3">
                 Master
               </span>
               <LevelMeter engine={engine()!} orientation="vertical" />

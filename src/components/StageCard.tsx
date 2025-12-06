@@ -20,7 +20,7 @@ export function StageCard(props: Props) {
 
   return (
     <div
-      class={`flex flex-col w-36 bg-gray-800 rounded-lg overflow-hidden ${
+      class={`flex flex-col w-32 sm:w-36 bg-gray-800 rounded-lg overflow-hidden shrink-0 ${
         props.stage.bypassed ? 'opacity-50' : ''
       }`}
     >
@@ -28,7 +28,7 @@ export function StageCard(props: Props) {
       <div class="flex items-center justify-between px-2 py-1.5 bg-gray-700">
         <span class="text-xs font-semibold truncate">{definition().label}</span>
         <button
-          class="text-gray-400 hover:text-red-400 text-xs leading-none"
+          class="text-gray-400 hover:text-red-400 active:text-red-300 text-xs leading-none p-1 -m-1 touch-manipulation"
           onClick={props.onRemove}
           title="Remove"
         >
@@ -63,7 +63,7 @@ export function StageCard(props: Props) {
                     props.onParamChange(key, val)
                   }}
                   disabled={props.stage.bypassed}
-                  class="w-full h-1 appearance-none bg-gray-600 rounded cursor-pointer disabled:cursor-not-allowed"
+                  class="w-full h-2 sm:h-1 appearance-none bg-gray-600 rounded cursor-pointer disabled:cursor-not-allowed touch-manipulation"
                 />
               </div>
             )
@@ -75,14 +75,14 @@ export function StageCard(props: Props) {
       <div class="flex items-center justify-between px-2 py-1.5 bg-gray-750 border-t border-gray-700">
         <div class="flex gap-1">
           <button
-            class="px-1.5 py-0.5 text-[10px] rounded bg-gray-600 hover:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed"
+            class="px-1.5 py-0.5 text-[10px] rounded bg-gray-600 hover:bg-gray-500 active:bg-gray-400 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
             onClick={props.onMoveLeft}
             disabled={props.index === 0}
           >
             &lt;
           </button>
           <button
-            class="px-1.5 py-0.5 text-[10px] rounded bg-gray-600 hover:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed"
+            class="px-1.5 py-0.5 text-[10px] rounded bg-gray-600 hover:bg-gray-500 active:bg-gray-400 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
             onClick={props.onMoveRight}
             disabled={props.index === props.total - 1}
           >
@@ -90,10 +90,10 @@ export function StageCard(props: Props) {
           </button>
         </div>
         <button
-          class={`px-2 py-0.5 text-[10px] rounded ${
+          class={`px-2 py-0.5 text-[10px] rounded touch-manipulation ${
             !props.stage.bypassed
-              ? 'bg-green-600 hover:bg-green-500'
-              : 'bg-gray-600 hover:bg-gray-500'
+              ? 'bg-green-600 hover:bg-green-500 active:bg-green-400'
+              : 'bg-gray-600 hover:bg-gray-500 active:bg-gray-400'
           }`}
           onClick={props.onBypassToggle}
         >

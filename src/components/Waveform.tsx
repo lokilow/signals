@@ -18,8 +18,8 @@ export function Waveform(props: Props) {
     const yData = new Float64Array(samples)
 
     const opts: uPlot.Options = {
-      width: 600,
-      height: 200,
+      width: container.clientWidth || 300,
+      height: Math.min(200, window.innerHeight * 0.25),
       title: 'Waveform',
       scales: {
         y: { range: [-1, 1] },
@@ -32,6 +32,16 @@ export function Waveform(props: Props) {
     }
 
     plot = new uPlot(opts, [xData, yData], container)
+
+    // Resize handler for responsive behavior
+    const handleResize = () => {
+      plot.setSize({
+        width: container.clientWidth,
+        height: Math.min(200, window.innerHeight * 0.25),
+      })
+    }
+    window.addEventListener('resize', handleResize)
+    onCleanup(() => window.removeEventListener('resize', handleResize))
 
     const update = () => {
       const data = props.getData()

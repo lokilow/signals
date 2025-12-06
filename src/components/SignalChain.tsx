@@ -36,17 +36,17 @@ export function SignalChain(props: Props) {
   }
 
   return (
-    <div class="bg-gray-900 rounded-lg p-4">
+    <div class="bg-gray-900 rounded-lg p-3 md:p-4">
       {/* Add stage buttons */}
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2 mb-3">
         <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">
           Signal Chain
         </span>
-        <div class="flex gap-1">
+        <div class="flex flex-wrap gap-1">
           <For each={STAGE_KINDS}>
             {(kind) => (
               <button
-                class="px-2 py-1 text-[10px] rounded bg-blue-700 hover:bg-blue-600"
+                class="px-2 py-1 text-[10px] rounded bg-blue-700 hover:bg-blue-600 active:bg-blue-500"
                 onClick={() => props.engine.addStage(kind)}
               >
                 + {STAGE_REGISTRY[kind].label}
@@ -57,9 +57,9 @@ export function SignalChain(props: Props) {
       </div>
 
       {/* Horizontal chain */}
-      <div class="flex items-stretch gap-2 overflow-x-auto pb-2">
+      <div class="flex items-stretch gap-2 overflow-x-auto pb-2 -mx-3 md:mx-0 px-3 md:px-0">
         {/* Source selector */}
-        <div class="flex flex-col w-32 bg-gray-800 rounded-lg overflow-hidden shrink-0">
+        <div class="flex flex-col w-28 sm:w-32 bg-gray-800 rounded-lg overflow-hidden shrink-0">
           <div class="px-2 py-1.5 bg-gray-700">
             <span class="text-xs font-semibold">Source</span>
           </div>
@@ -208,7 +208,7 @@ export function SignalChain(props: Props) {
         )}
 
         {/* Output level meter */}
-        <div class="flex flex-col w-32 bg-gray-800 rounded-lg overflow-hidden shrink-0">
+        <div class="flex flex-col w-28 sm:w-32 bg-gray-800 rounded-lg overflow-hidden shrink-0">
           <div class="px-2 py-1.5 bg-gray-700">
             <span class="text-xs font-semibold">Output</span>
           </div>

@@ -10,6 +10,8 @@ This file is the minimal "state" needed to hydrate full project context. Read th
 - Extend incrementally; resist over-engineering
 - Simple first, then make extensible
 
+**Mobile-first**: Design for touch and small screens first. Tailwind's responsive prefixes (`sm:`, `md:`) progressively enhance for larger viewports.
+
 **Single source of truth**: `EngineState` in `engine.ts` drives both UI and WebAudio graph. State changes trigger idempotent rebuilds.
 
 **Registry pattern**: `STAGE_REGISTRY` in `stages.ts` defines all stage types. Adding a new effect = adding one registry entry.
