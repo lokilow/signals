@@ -236,6 +236,7 @@ export const STAGE_REGISTRY: StageRegistry = {
         update: (p) => {
           if (typeof p.gain === 'number') {
             const gainValue = clamp(p.gain, 0, 2)
+            console.log('[UiuaWorklet] Updating gain to', gainValue)
             workletNode.port.postMessage({ type: 'setGain', value: gainValue })
           }
         },
@@ -258,27 +259,54 @@ export const STAGE_REGISTRY: StageRegistry = {
       },
     },
     createInstance: (ctx, params) => {
+      console.log('[UiuaWorklet] Creating instance with params:', params)
+      const initialGain = clamp(params.gain, 0, 2)
       const workletNode = new AudioWorkletNode(ctx, 'uiua-worklet-processor', {
         processorOptions: {
-          gain: params.gain,
+          gain: initialGain,
           workletType: 'gain', // Specify which .ua worklet to use
         },
+        parameterData: {
+          gain: initialGain,
+        },
       })
+      console.log('[UiuaWorklet] WorkletNode created:', workletNode)
 
       // Load and send WASM bytes to the worklet
+      console.log('[UiuaWorklet] Fetching WASM...')
       fetch(
         new URL(
           '../../audio-worklets/uiua-worklet/pkg/uiua_worklet_bg.wasm',
           import.meta.url
         )
       )
-        .then((response) => response.arrayBuffer())
+        .then((response) => {
+          console.log('[UiuaWorklet] WASM fetch response:', response.status)
+          return response.arrayBuffer()
+        })
         .then((wasmBytes) => {
+          console.log(
+            '[UiuaWorklet] Sending WASM to worklet, size:',
+            wasmBytes.byteLength
+          )
           workletNode.port.postMessage({ type: 'initWasm', wasmBytes })
         })
         .catch((err) => {
           console.error('Failed to load Uiua worklet WASM module:', err)
         })
+
+      // Listen for messages from worklet
+      workletNode.port.onmessage = (e) => {
+        console.log('[UiuaWorklet] Message from worklet:', e.data)
+      }
+
+      const gainParam =
+        (workletNode.parameters as unknown as Map<string, AudioParam>).get(
+          'gain'
+        ) ?? null
+      if (gainParam) {
+        gainParam.setValueAtTime(initialGain, ctx.currentTime)
+      }
 
       return {
         input: workletNode,
@@ -286,6 +314,8 @@ export const STAGE_REGISTRY: StageRegistry = {
         update: (p) => {
           if (typeof p.gain === 'number') {
             const gainValue = clamp(p.gain, 0, 2)
+            console.log('[UiuaWorklet] Updating gain to', gainValue)
+            // Always use postMessage - AudioParam doesn't reliably propagate to WASM worklets
             workletNode.port.postMessage({ type: 'setGain', value: gainValue })
           }
         },
