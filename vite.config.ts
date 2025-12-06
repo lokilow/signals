@@ -16,7 +16,7 @@ const getLocalHostname = () => {
 }
 
 const localHost = `${getLocalHostname()}.local`
-console.log('Vite allowing host:', localHost)
+console.debug('Vite allowing host:', localHost)
 
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/',

@@ -499,13 +499,15 @@ export class AudioEngine {
       instance.update(stageState.params)
 
       if (!stageState.bypassed) {
-        console.log(
+        console.debug(
           `[Engine] Connecting ${stageState.kind} (${stageState.id}): ${current.constructor.name} -> ${instance.input.constructor.name}`
         )
         current.connect(instance.input)
         current = instance.output
       } else {
-        console.log(`[Engine] Bypassing ${stageState.kind} (${stageState.id})`)
+        console.debug(
+          `[Engine] Bypassing ${stageState.kind} (${stageState.id})`
+        )
       }
     }
 

@@ -4,10 +4,10 @@
 // Polyfill TextDecoder/TextEncoder for AudioWorklet context
 // Inline polyfill to avoid module resolution issues in some environments
 ;(function (global) {
-  'use strict';
+  'use strict'
 
   if (global.TextEncoder && global.TextDecoder) {
-    return; // Already defined, no need for polyfill
+    return // Already defined, no need for polyfill
   }
 
   // TextEncoder polyfill
@@ -15,99 +15,105 @@
 
   TextEncoder.prototype.encode = function (string) {
     // Convert string to UTF-8 byte array
-    const octets = [];
-    let i = 0;
+    const octets = []
+    let i = 0
     while (i < string.length) {
-      const codePoint = string.codePointAt(i);
-      let c = 0;
-      let bits = 0;
-      if (codePoint <= 0x007F) {
-        c = 0;
-        bits = 0x00;
-      } else if (codePoint <= 0x07FF) {
-        c = 6;
-        bits = 0xC0;
-      } else if (codePoint <= 0xFFFF) {
-        c = 12;
-        bits = 0xE0;
-      } else if (codePoint <= 0x1FFFFF) {
-        c = 18;
-        bits = 0xF0;
+      const codePoint = string.codePointAt(i)
+      let c = 0
+      let bits = 0
+      if (codePoint <= 0x007f) {
+        c = 0
+        bits = 0x00
+      } else if (codePoint <= 0x07ff) {
+        c = 6
+        bits = 0xc0
+      } else if (codePoint <= 0xffff) {
+        c = 12
+        bits = 0xe0
+      } else if (codePoint <= 0x1fffff) {
+        c = 18
+        bits = 0xf0
       }
-      octets.push(bits | (codePoint >> c));
+      octets.push(bits | (codePoint >> c))
       while (c >= 6) {
-        c -= 6;
-        octets.push(0x80 | ((codePoint >> c) & 0x3F));
+        c -= 6
+        octets.push(0x80 | ((codePoint >> c) & 0x3f))
       }
-      i += codePoint >= 0x10000 ? 2 : 1;
+      i += codePoint >= 0x10000 ? 2 : 1
     }
-    return new Uint8Array(octets);
-  };
+    return new Uint8Array(octets)
+  }
 
   // TextDecoder polyfill
   function TextDecoder(encoding, options) {
     // wasm-bindgen uses utf-8 encoding
-    this.encoding = encoding || 'utf-8';
-    this.fatal = (options && options.fatal) || false;
-    this.ignoreBOM = (options && options.ignoreBOM) || false;
+    this.encoding = encoding || 'utf-8'
+    this.fatal = (options && options.fatal) || false
+    this.ignoreBOM = (options && options.ignoreBOM) || false
   }
 
   TextDecoder.prototype.decode = function (octets) {
     // Handle edge cases - wasm-bindgen calls decode() with no args during init
     if (octets === undefined || octets === null) {
-      return '';
+      return ''
     }
 
     if (octets.length === 0) {
-      return '';
+      return ''
     }
 
     // Ensure we have a Uint8Array
     if (!(octets instanceof Uint8Array)) {
-      octets = new Uint8Array(octets);
+      octets = new Uint8Array(octets)
     }
 
-    let string = '';
-    let i = 0;
+    let string = ''
+    let i = 0
     while (i < octets.length) {
-      let octet = octets[i];
-      let bytesNeeded = 0;
-      let codePoint = 0;
-      if (octet <= 0x7F) {
-        bytesNeeded = 0;
-        codePoint = octet & 0xFF;
-      } else if (octet <= 0xDF) {
-        bytesNeeded = 1;
-        codePoint = octet & 0x1F;
-      } else if (octet <= 0xEF) {
-        bytesNeeded = 2;
-        codePoint = octet & 0x0F;
-      } else if (octet <= 0xF4) {
-        bytesNeeded = 3;
-        codePoint = octet & 0x07;
+      let octet = octets[i]
+      let bytesNeeded = 0
+      let codePoint = 0
+      if (octet <= 0x7f) {
+        bytesNeeded = 0
+        codePoint = octet & 0xff
+      } else if (octet <= 0xdf) {
+        bytesNeeded = 1
+        codePoint = octet & 0x1f
+      } else if (octet <= 0xef) {
+        bytesNeeded = 2
+        codePoint = octet & 0x0f
+      } else if (octet <= 0xf4) {
+        bytesNeeded = 3
+        codePoint = octet & 0x07
       }
       if (octets.length - i - bytesNeeded > 0) {
-        let k = 0;
+        let k = 0
         while (k < bytesNeeded) {
-          octet = octets[i + k + 1];
-          codePoint = (codePoint << 6) | (octet & 0x3F);
-          k += 1;
+          octet = octets[i + k + 1]
+          codePoint = (codePoint << 6) | (octet & 0x3f)
+          k += 1
         }
       } else {
-        codePoint = 0xFFFD;
-        bytesNeeded = octets.length - i;
+        codePoint = 0xfffd
+        bytesNeeded = octets.length - i
       }
-      string += String.fromCodePoint(codePoint);
-      i += bytesNeeded + 1;
+      string += String.fromCodePoint(codePoint)
+      i += bytesNeeded + 1
     }
-    return string;
-  };
+    return string
+  }
 
-  global.TextEncoder = TextEncoder;
-  global.TextDecoder = TextDecoder;
-})(typeof globalThis !== 'undefined' ? globalThis : self);
+  global.TextEncoder = TextEncoder
+  global.TextDecoder = TextDecoder
+})(typeof globalThis !== 'undefined' ? globalThis : self)
 
-import init, { UiuaGainWorklet, UiuaBiquadWorklet, UiuaDelayWorklet, wasm_memory, process_audio } from './uiua-worklet/pkg/uiua_worklet.js'
+import init, {
+  UiuaGainWorklet,
+  UiuaBiquadWorklet,
+  UiuaDelayWorklet,
+  wasm_memory,
+  process_audio,
+} from './uiua-worklet/pkg/uiua_worklet.js'
 
 let wasmInitialized = false
 
@@ -143,7 +149,8 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
     // Listen for parameter changes from the main thread
     this.port.onmessage = (e) => {
       if (e.data.type === 'setGain') {
-        const value = typeof e.data.value === 'number' ? e.data.value : this.gain
+        const value =
+          typeof e.data.value === 'number' ? e.data.value : this.gain
         this.gain = Math.min(Math.max(value, 0), 2)
       } else if (e.data.type === 'setParam') {
         // Stateful worklet param update
@@ -190,7 +197,8 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
           throw new Error(`Unknown worklet type: ${this.workletType}`)
       }
 
-      this.supportsSharedBuffers = typeof this.processor.buffer_len === 'function'
+      this.supportsSharedBuffers =
+        typeof this.processor.buffer_len === 'function'
       if (this.supportsSharedBuffers) {
         this.setupBufferViews()
       }
@@ -214,8 +222,16 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
     const inputPtr = this.processor.input_ptr()
     const outputPtr = this.processor.output_ptr()
 
-    this.inputView = new Float32Array(this.memory.buffer, inputPtr, bufferLength)
-    this.outputView = new Float32Array(this.memory.buffer, outputPtr, bufferLength)
+    this.inputView = new Float32Array(
+      this.memory.buffer,
+      inputPtr,
+      bufferLength
+    )
+    this.outputView = new Float32Array(
+      this.memory.buffer,
+      outputPtr,
+      bufferLength
+    )
   }
 
   ensureBufferViews() {
@@ -239,7 +255,9 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
     const output = outputs[0]
     const gainParam = parameters?.gain
     const nextGain =
-      Array.isArray(gainParam) && gainParam.length > 0 ? gainParam[0] : this.gain
+      Array.isArray(gainParam) && gainParam.length > 0
+        ? gainParam[0]
+        : this.gain
 
     if (typeof nextGain === 'number') {
       this.gain = Math.min(Math.max(nextGain, 0), 2)
@@ -268,12 +286,18 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
           const result = process_audio(Array.from(inputChannel), this.gain)
           outputChannel.set(result)
         } catch (err) {
-          console.error('[Worklet] Uiua fallback processing error:', err, err.stack)
+          console.error(
+            '[Worklet] Uiua fallback processing error:',
+            err,
+            err.stack
+          )
           outputChannel.set(inputChannel)
         }
       }
       if (!this.loggedFallbackNotice) {
-        console.warn('[UiuaWorklet] process_block API unavailable; using JS fallback path')
+        console.warn(
+          '[UiuaWorklet] process_block API unavailable; using JS fallback path'
+        )
         this.loggedFallbackNotice = true
       }
       return true
@@ -297,7 +321,11 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
       const frames = inputChannel.length
 
       if (frames > maxFrames) {
-        console.warn('[Worklet] Block larger than buffer length', frames, maxFrames)
+        console.warn(
+          '[Worklet] Block larger than buffer length',
+          frames,
+          maxFrames
+        )
         outputChannel.set(inputChannel)
         continue
       }
@@ -315,10 +343,14 @@ class UiuaWorkletProcessor extends AudioWorkletProcessor {
 
         outputChannel.set(outputBuffer.subarray(0, frames))
         if (!this.loggedSharedInit) {
-          console.log('[UiuaWorklet] Shared buffer processing active (frames:', frames, ') stateful:', this.isStateful)
+          console.debug(
+            '[UiuaWorklet] Shared buffer processing active (frames:',
+            frames,
+            ') stateful:',
+            this.isStateful
+          )
           this.loggedSharedInit = true
         }
-
       } catch (err) {
         console.error('[Worklet] Uiua processing error:', err, err.stack)
         // On error, pass through unmodified

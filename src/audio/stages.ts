@@ -237,7 +237,7 @@ export const STAGE_REGISTRY: StageRegistry = {
         update: (p) => {
           if (typeof p.gain === 'number') {
             const gainValue = clamp(p.gain, 0, 2)
-            console.log('[UiuaWorklet] Updating gain to', gainValue)
+            console.debug('[UiuaWorklet] Updating gain to', gainValue)
             workletNode.port.postMessage({ type: 'setGain', value: gainValue })
           }
         },
@@ -260,7 +260,7 @@ export const STAGE_REGISTRY: StageRegistry = {
       },
     },
     createInstance: (ctx, params) => {
-      console.log('[UiuaWorklet] Creating instance with params:', params)
+      console.debug('[UiuaWorklet] Creating instance with params:', params)
       const initialGain = clamp(params.gain, 0, 2)
       const workletNode = new AudioWorkletNode(ctx, 'uiua-worklet-processor', {
         processorOptions: {
@@ -271,10 +271,10 @@ export const STAGE_REGISTRY: StageRegistry = {
           gain: initialGain,
         },
       })
-      console.log('[UiuaWorklet] WorkletNode created:', workletNode)
+      console.debug('[UiuaWorklet] WorkletNode created:', workletNode)
 
       // Load and send WASM bytes to the worklet
-      console.log('[UiuaWorklet] Fetching WASM...')
+      console.debug('[UiuaWorklet] Fetching WASM...')
       fetch(
         new URL(
           '../../audio-worklets/uiua-worklet/pkg/uiua_worklet_bg.wasm',
@@ -282,11 +282,11 @@ export const STAGE_REGISTRY: StageRegistry = {
         )
       )
         .then((response) => {
-          console.log('[UiuaWorklet] WASM fetch response:', response.status)
+          console.debug('[UiuaWorklet] WASM fetch response:', response.status)
           return response.arrayBuffer()
         })
         .then((wasmBytes) => {
-          console.log(
+          console.debug(
             '[UiuaWorklet] Sending WASM to worklet, size:',
             wasmBytes.byteLength
           )
@@ -298,7 +298,7 @@ export const STAGE_REGISTRY: StageRegistry = {
 
       // Listen for messages from worklet
       workletNode.port.onmessage = (e) => {
-        console.log('[UiuaWorklet] Message from worklet:', e.data)
+        console.debug('[UiuaWorklet] Message from worklet:', e.data)
       }
 
       const gainParam =
@@ -315,7 +315,7 @@ export const STAGE_REGISTRY: StageRegistry = {
         update: (p) => {
           if (typeof p.gain === 'number') {
             const gainValue = clamp(p.gain, 0, 2)
-            console.log('[UiuaWorklet] Updating gain to', gainValue)
+            console.debug('[UiuaWorklet] Updating gain to', gainValue)
             // Always use postMessage - AudioParam doesn't reliably propagate to WASM worklets
             workletNode.port.postMessage({ type: 'setGain', value: gainValue })
           }
@@ -339,7 +339,7 @@ export const STAGE_REGISTRY: StageRegistry = {
       },
     },
     createInstance: (ctx, params) => {
-      console.log('[UiuaBiquad] Creating instance with params:', params)
+      console.debug('[UiuaBiquad] Creating instance with params:', params)
       const workletNode = new AudioWorkletNode(ctx, 'uiua-worklet-processor', {
         processorOptions: {
           workletType: 'biquad',
@@ -368,7 +368,7 @@ export const STAGE_REGISTRY: StageRegistry = {
         })
 
       workletNode.port.onmessage = (e) => {
-        console.log('[UiuaBiquad] Message from worklet:', e.data)
+        console.debug('[UiuaBiquad] Message from worklet:', e.data)
       }
 
       return {
@@ -377,7 +377,7 @@ export const STAGE_REGISTRY: StageRegistry = {
         update: (p) => {
           if (typeof p.cutoff === 'number') {
             const cutoffValue = clamp(p.cutoff, 0, 1)
-            console.log('[UiuaBiquad] Updating cutoff to', cutoffValue)
+            console.debug('[UiuaBiquad] Updating cutoff to', cutoffValue)
             workletNode.port.postMessage({
               type: 'setParam',
               index: 0,
